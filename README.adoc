@@ -1,0 +1,55 @@
+// Copyright (c) 2018, 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:projectid: testcontainers
+:page-layout: guide-multipane
+:page-duration: 20 minutes
+:page-releasedate: 2023-01-31
+:page-description: Learn how to use the config profile feature in MicroProfile Config to provide configurations for different phases in the DevOps lifecycle.
+:page-tags: ['MicroProfile', 'Jakarta EE', 'Docker']
+:page-permalink: /guides/{projectid}
+:page-related-guides: ['rest-intro', 'docker', 'rest-client-java']
+:common-includes: https://raw.githubusercontent.com/OpenLiberty/guides-common/prod
+:source-highlighter: prettify
+:page-seo-title: Configuring Java microservices for multiple environments using MicroProfile Config
+:page-seo-description: A tutorial and example on how to configure multiple project environments and development stages in DevOps lifecycle for Java microservices using the config profile feature in MicroProfile Config.
+:guide-author: Open Liberty
+= Testing a MicroProfile or Jakarta EE application
+
+[.hidden]
+NOTE: This repository contains the guide documentation source. To view the guide in published form, view it on the https://openliberty.io/guides/{projectid}.html[Open Liberty website].
+
+Learn how to develop a Java application on Open Liberty with Maven and Docker.
+
+== What you'll learn
+
+...
+
+
+// =================================================================================================
+// Getting Started
+// =================================================================================================
+[role='command']
+include::{common-includes}/gitclone.adoc[]
+
+// =================================================================================================
+// Try what you'll build
+// =================================================================================================
+=== Try what you'll build
+
+...
+
+// =================================================================================================
+// Great work! You're done!
+// =================================================================================================
+
+== Great work! You're done!
+
+You just learned how to use ...
+
+include::{common-includes}/attribution.adoc[subs="attributes"]
