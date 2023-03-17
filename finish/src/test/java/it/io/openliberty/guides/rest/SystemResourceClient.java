@@ -1,7 +1,7 @@
-package it.io.openliberty.guides.inventory;
+package it.io.openliberty.guides.rest;
 
 import java.util.List;
-import io.openliberty.guides.inventory.model.SystemData;
+import io.openliberty.guides.rest.model.SystemData;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.Consumes;

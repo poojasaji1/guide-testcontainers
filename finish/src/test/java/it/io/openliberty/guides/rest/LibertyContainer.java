@@ -9,7 +9,18 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 // end::copyright[]
-package it.io.openliberty.guides.inventory;
+package it.io.openliberty.guides.rest;
+
+import java.io.FileInputStream;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 // imports for a JAXRS client to simplify the code
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
@@ -32,11 +43,22 @@ public class LibertyContainer extends GenericContainer<LibertyContainer> {
 
     private String baseURL;
 
+    private KeyStore keystore;
+    private SSLContext sslContext;
+
+    public static String getProtocol() {
+        return System.getProperty("test.protocol", "https");
+    }
+
+    public static boolean testHttps() {
+        return getProtocol().equalsIgnoreCase("https");
+    }
+
     public LibertyContainer(final String dockerImageName) {
         super(dockerImageName);
         // wait for smarter planet message by default
         waitingFor(Wait.forLogMessage("^.*CWWKF0011I.*$", 1));
-        this.addExposedPorts(9080);
+        init();
     }
 
     // tag::createRestClient[]
@@ -46,6 +68,10 @@ public class LibertyContainer extends GenericContainer<LibertyContainer> {
             urlPath += applicationPath;
         }
         ClientBuilder builder = ResteasyClientBuilder.newBuilder();
+        if (testHttps()) {
+            builder.sslContext(sslContext);
+            builder.trustStore(keystore);
+        }
         ResteasyClient client = (ResteasyClient) builder.build();
         ResteasyWebTarget target = client.target(UriBuilder.fromPath(urlPath));
         return target.proxy(clazz);
@@ -61,11 +87,50 @@ public class LibertyContainer extends GenericContainer<LibertyContainer> {
             throw new IllegalStateException(
                 "Container must be running to determine hostname and port");
         }
-        baseURL =  "http://" + this.getContainerIpAddress()
+        baseURL =  getProtocol() + "://" + this.getContainerIpAddress()
             + ":" + this.getFirstMappedPort();
         System.out.println("TEST: " + baseURL);
         return baseURL;
     }
     // end::getBaseURL[]
 
+    private void init() {
+
+        if (!testHttps()) {
+            this.addExposedPorts(9080);
+            return;
+        }
+
+        this.addExposedPorts(9443, 9080);
+        try {
+            String keystoreFile = System.getProperty("user.dir")
+                    + "/src/main/liberty/config/resources/security/key.p12";
+            keystore = KeyStore.getInstance("PKCS12");
+            keystore.load(new FileInputStream(keystoreFile), "secret".toCharArray());
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                                        KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(keystore, "secret".toCharArray());
+            X509TrustManager xtm = new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType)
+                    throws CertificateException { }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType)
+                    throws CertificateException { }
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+            };
+            TrustManager[] tm = new TrustManager[] {
+                                    xtm
+                                };
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(kmf.getKeyManagers(), tm, new SecureRandom());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

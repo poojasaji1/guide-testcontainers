@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<server description="inventory">
+<server description="Sample Liberty server">
 
     <featureManager>
         <feature>jakartaee-9.1</feature>
@@ -10,9 +10,14 @@
     <variable name="default.https.port" defaultValue="9443" />
     <variable name="default.context.root" defaultValue="/inventory" />
 
+    <keyStore id="defaultKeyStore" password="secret" />
+
     <httpEndpoint host="*" httpPort="${default.http.port}"
         httpsPort="${default.https.port}" id="defaultHttpEndpoint"/>
 
-    <webApplication location="inventory.war" contextRoot="${default.context.root}" /> 
+    <!-- Default SSL configuration enables trust for default certificates from the Java runtime -->
+    <ssl id="defaultSSLConfig" trustDefaultCerts="true" />
+
+    <webApplication location="guide-testcontainers.war" contextRoot="${default.context.root}" /> 
 
 </server>

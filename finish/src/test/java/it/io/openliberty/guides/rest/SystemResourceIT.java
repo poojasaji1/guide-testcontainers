@@ -1,9 +1,9 @@
-package it.io.openliberty.guides.inventory;
+package it.io.openliberty.guides.rest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-import io.openliberty.guides.inventory.model.SystemData;
+import io.openliberty.guides.rest.model.SystemData;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
