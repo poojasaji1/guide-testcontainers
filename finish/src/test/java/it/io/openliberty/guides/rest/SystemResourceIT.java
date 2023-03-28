@@ -38,7 +38,9 @@ public class SystemResourceIT {
     private static Logger logger = LoggerFactory.getLogger(SystemResourceIT.class);
     // end::logger[]
     private static String appPath = "/inventory/api";
+    // tag::appImageName[]
     private static String appImageName = "testcontainers:1.0-SNAPSHOT";
+    // end::appImageName[]
 
     // tag::SystemResourceClient[]
     public static SystemResourceClient client;
@@ -79,36 +81,52 @@ public class SystemResourceIT {
     // end::showSystemData[]
 
     // tag::testcases[]
+    // tag::testAddSystem[]
     @Test
     @Order(1)
     public void testAddSystem() {
         System.out.println("TEST: Testing add a system");
+        // tag::addSystem[]
         client.addSystem("localhost", "linux", "11", Long.valueOf(2048));
+        // end::addSystem[]
+        // tag::listContents[]
         List<SystemData> systems = client.listContents();
+        // end::listContents[]
         assertEquals(1, systems.size());
         showSystemData(systems.get(0));
         assertEquals("11", systems.get(0).getJavaVersion());
         assertEquals(Long.valueOf(2048), systems.get(0).getHeapSize());
     }
+    // end::testAddSystem[]
 
+    // tag::testUpdateSystem[]
     @Test
     @Order(2)
     public void testUpdateSystem() {
         System.out.println("TEST: Testing update a system");
+        // tag::updateSystem[]
         client.updateSystem("localhost", "linux", "8", Long.valueOf(1024));
+        // end::updateSystem[]
+        // tag::getSystem[]
         SystemData system = client.getSystem("localhost");
+        // end::getSystem[]
         showSystemData(system);
         assertEquals("8", system.getJavaVersion());
         assertEquals(Long.valueOf(1024), system.getHeapSize());
     }
+    // end::testUpdateSystem[]
 
+    // tag::testRemoveSystem[]
     @Test
     @Order(3)
     public void testRemoveSystem() {
         System.out.println("TEST: Testing remove a system");
+        // tag::removeSystem[]
         client.removeSystem("localhost");
+        // end::removeSystem[]
         List<SystemData> systems = client.listContents();
         assertEquals(0, systems.size());
     }
+    // end::testRemoveSystem[]
     // end::testcases[]
 }

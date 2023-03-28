@@ -140,7 +140,7 @@ Dockerfile has already been set up for you. Build your Docker image with the fol
 docker build -t testcontainers:1.0-SNAPSHOT .
 ```
 
-To verify that the images are built, run the docker images command to list all local Docker images:
+To verify that the images are built, run the `docker images` command to list all local Docker images:
 
 [role='command']
 ```
@@ -191,7 +191,7 @@ SystemResourceIT.java
 include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
 ----
 
-Annotate the `SystemResourceIT` class with [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation, define the [hotspot=libertyContainer file=2]`libertyContainer` test container to start up the `testcontainers` docker image, and annotate the application with [hotspot=container-annotation file=2]`@Container` annotation.
+Annotate the `SystemResourceIT` class with [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation, define the [hotspot=libertyContainer file=2]`libertyContainer` test container to start up the `testcontainers` Docker image, and annotate the application with [hotspot=container-annotation file=2]`@Container` annotation.
 
 The [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation enables Testcontainers support for this class.
 
@@ -257,6 +257,8 @@ Note that logger instances are already created in both [hotspot=logger file=2]`L
 
 At this stage, your application can be easily started in a container as part of the test lifecycle. The next step involves implementing a RESTful client interface to efficiently send HTTP test requests. This streamlines interactions with the app's REST endpoints and ensures thorough, effective testing under various conditions, ultimately improving your microservice's overall quality.
 
+First, you'll create a RESTful client interface for the application.
+
 [role="code_command hotspot file=0" ,subs="quotes"]
 ----
 #Create the `SystemResourceClient.java` file.#
@@ -272,6 +274,95 @@ include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceClient
 
 The `SystemResourceClient` RESTful client interface declares [hotspot=listContents file=0]`listContents()`, [hotspot=getSystem file=0]`getSystem()`, [hotspot=addSystem file=0]`addSystem()`, [hotspot=updateSystem file=0]`updateSystem()`, and [hotspot=removeSystem file=0]`removeSystem()` methods for accessing each of the endpoints that are set up to access the RESTful application.
 
+[role="code_command hotspot file=1" ,subs="quotes"]
+----
+#Replace the `LibertyContainer.java` file.#
+`src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java`
+----
+
+// file 1
+LibertyContainer.java
+[source, java, linenums, role="code_column hide_tags=copyright"]
+----
+include::finish/src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java[]
+----
+
+The [hotspot=createRestClient file=1]`createRestClient()` method generates a REST client instance using the provided class and application path. The [hotspot=getBaseURL file=1]`getBaseURL()` method constructs the URL for accessing the Docker image specified in the constructor.
+
+[role="code_command hotspot file=2" ,subs="quotes"]
+----
+#Replace the `SystemResourceIT.java` file.#
+`src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java`
+----
+
+// file 2
+SystemResourceIT.java
+[source, java, linenums, role="code_column hide_tags=copyright,showSystemData,testcases"]
+----
+include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
+----
+
+The [hotspot=setupTestClass file=2]`setupTestClass()` method initializes the [hotspot=SystemResourceClient file=2]`SystemResourceClient` REST client by invoking the [hotspot=createRestClient file=1]`LibertyContainer.createRestClient()` method with the `SystemResourceClient` interface. During this process, the [hotspot=getBaseURL file=1]`LibertyContainer.getBaseURL()` method is called to construct the URL for accessing the [hotspot=appImageName file=2]`testcontainers` Docker image.
+
+// =================================================================================================
+// Testing your container
+// =================================================================================================
+== Testing your container
+
+Now that the setup is complete, you can write your integration test cases. To test your application, utilize the initialized `SystemResourceClient` REST client to make HTTP POST requests and read the responses.
+
+[role="code_command hotspot file=0" ,subs="quotes"]
+----
+#Replace the `SystemResourceIT.java` file.#
+`src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java`
+----
+
+// file 0
+SystemResourceIT.java
+[source, java, linenums, role="code_column hide_tags=copyright"]
+----
+include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
+----
+
+The [hotspot=testAddSystem file=0]`testAddSystem()` verifies the [hotspot=addSystem file=0]`addSystem` and [hotspot=listContents file=0]`listContents` endpoints.
+
+The [hotspot=testUpdateSystem file=0]`testUpdateSystem()` verifies the [hotspot=updateSystem file=0]`updateSystem` and [hotspot=getSystem file=0]`getSystem` endpoints.
+
+The [hotspot=testRemoveSystem file=0]`testRemoveSystem()` verifies the [hotspot=removeSystem file=0]`removeSystem` endpoint.
+
+=== Running the tests
+
+// file 0
+pom.xml
+[source, XML, linenums, role='code_column']
+----
+include::finish/pom.xml[]
+----
+
+The [hotspot=failsafe file=0]`maven-failsafe-plugin` has already been included in your Maven `pom.xml` file. This enables integration tests to be run using the Maven `verify` goal.
+
+Run the Maven `verify` goal, which compiles the java files, starts the containers, runs the tests, and then stops the containers.
+
+[role='command']
+```
+mvn verify
+```
+
+You will see the following output:
+
+[role="no_copy"]
+----
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Running it.io.openliberty.guides.rest.SystemResourceIT
+...
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.231 s - in it.io.openliberty.guides.rest.SystemResourceIT
+
+Results :
+
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+----
 
 // =================================================================================================
 // Great work! You're done!
