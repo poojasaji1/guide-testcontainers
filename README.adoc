@@ -10,25 +10,31 @@
 :page-layout: guide-multipane
 :page-duration: 20 minutes
 :page-releasedate: 2023-01-31
-:page-description: Learn how to use the config profile feature in MicroProfile Config to provide configurations for different phases in the DevOps lifecycle.
+:page-description: Learn how to use Testcontainers to test a MicroProfile or Jakarta EE application.
 :page-tags: ['MicroProfile', 'Jakarta EE', 'Docker']
 :page-permalink: /guides/{projectid}
 :page-related-guides: ['rest-intro', 'docker', 'rest-client-java']
 :common-includes: https://raw.githubusercontent.com/OpenLiberty/guides-common/prod
 :source-highlighter: prettify
-:page-seo-title: Configuring Java microservices for multiple environments using MicroProfile Config
-:page-seo-description: A tutorial and example on how to configure multiple project environments and development stages in DevOps lifecycle for Java microservices using the config profile feature in MicroProfile Config.
+:page-seo-title: Testing a MicroProfile or Jakarta EE application using Testcontainers with an Open Liberty Docker container
+:page-seo-description: A tutorial on how to develop tests for a MicroProfile microservice or a Jakarta EE application in production-like settings by using Testcontainers with an Open Liberty Docker container.
 :guide-author: Open Liberty
-= Testing a MicroProfile or Jakarta EE application
+= Testing a MicroProfile or Jakarta EE application with Testcontainers
 
 [.hidden]
 NOTE: This repository contains the guide documentation source. To view the guide in published form, view it on the https://openliberty.io/guides/{projectid}.html[Open Liberty website].
 
-Learn how to develop a Java application on Open Liberty with Maven and Docker.
+Learn how to test a MicroProfile or Jakarta EE application in true-to-production environments using Testcontainers.
 
 == What you'll learn
 
-...
+You'll learn how to write integration tests for a MicroProfile microservice or a Jakarta EE application and run them in production-like settings using https://www.testcontainers.org/[Testcontainers^]. 
+
+Sometimes tests might pass in development and testing (dev/test) environments, but fail in production because the application runs differently in production than in dev/test. By testing your containerized application from outside the container, you can ensure that the exact same image running in production is tested, minimizing the differences between dev/test and production environments.
+
+=== What is Testcontainers?
+
+Testcontainers is an open-source library that wraps Docker in a Java API and offers seamless integration with JUnit. It is particularly useful for testing applications with external resource dependencies such as databases, message queues, or web services. One of its most crucial features is the generic support for any Docker image, allowing you to leverage the consistency and portability of Docker containers for testing.
 
 // =================================================================================================
 // Additional prerequisites
@@ -89,7 +95,7 @@ You will see the following output:
   T E S T S
  -------------------------------------------------------
  Running it.io.openliberty.guides.rest.SystemResourceIT
-
+ ...
  Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.891 s - in it.io.openliberty.guides.rest.SystemResourceIT
 
  Results:
@@ -113,11 +119,9 @@ pom.xml
 include::finish/pom.xml[]
 ----
 
-The necessary test dependencies, including Testcontainers Core and JUnit Jupiter extension libraries, are already added to the pom.xml Maven configuration file for you. These allow you to utilize Testcontainers in integration tests conveniently. 
+The necessary test dependencies, including [hotspot=testcontainers file=0]`testcontainers` and Testcontainers [hotspot=testcontainers-junit file=0]`junit-jupiter` extension, have already been added to the `pom.xml` Maven configuration file for you. The [hotspot=testcontainers file=0]`testcontainers` dependency offers a general-purpose API for managing container-based test environments. The Testcontainers [hotspot=testcontainers-junit file=0]`junit-jupiter` extension dependency provides integration with the JUnit 5 testing framework. 
 
-The Testcontainers Core dependency offers a general-purpose API for managing container-based test environments. The Testcontainers JUnit Jupiter extension dependency provides integration with the JUnit 5 testing framework. 
-
-To run integration tests in a production-like environment, deploy the test application to a container to ensure a complete and functional setup.
+To run integration tests in a production-like environment, you first need to deploy the test application to a container.
 
 Run the `mvn package` command so that the `.war` file resides in the `target` directory:
 
@@ -126,7 +130,7 @@ Run the `mvn package` command so that the `.war` file resides in the `target` di
 mvn package
 ```
 
-Run the following command to download or update to the latest Open Liberty Docker image, if not already done:
+If you don't have the latest Docker image, pull it by running the following command:
 
 [role='command']
 ```
