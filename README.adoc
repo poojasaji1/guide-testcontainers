@@ -375,6 +375,6 @@ Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
 // =================================================================================================
 == Great work! You're done!
 
-You just tested a reactive MicroProfile microservice using Testcontainers.
+You just tested a MicroProfile microservice in a Docker container using Testcontainers.
 
 include::{common-includes}/attribution.adoc[subs="attributes"]
