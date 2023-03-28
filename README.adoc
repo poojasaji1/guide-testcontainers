@@ -30,6 +30,14 @@ Learn how to develop a Java application on Open Liberty with Maven and Docker.
 
 ...
 
+// =================================================================================================
+// Additional prerequisites
+// =================================================================================================
+== Additional prerequisites
+
+Before you begin, Docker needs to be installed. For installation instructions, refer to the https://docs.docker.com/get-docker/[official Docker documentation^]. You'll test the application in Docker containers.
+
+Make sure to start your Docker daemon before you proceed.
 
 // =================================================================================================
 // Getting Started
@@ -42,12 +50,232 @@ include::{common-includes}/gitclone.adoc[]
 // =================================================================================================
 === Try what you'll build
 
-...
+The `finish` directory in the root of this guide contains the finished application. Give it a try before you proceed.
+
+To try out the test, first go to the `finish` directory and run the `mvn package` command so that the `.war` file resides in the `target` directory:
+
+[role='command']
+```
+cd finish
+mvn package
+```
+
+Run the following command to download or update to the latest Open Liberty Docker image:
+
+[role='command']
+```
+docker pull icr.io/appcafe/open-liberty:full-java11-openj9-ubi
+```
+
+Build your Docker image with the following commands:
+
+[role='command']
+```
+docker build -t testcontainers:1.0-SNAPSHOT .
+```
+
+Run the following Maven goal to build the application and run the integration tests on an Open Liberty server in a container:
+
+[role='command']
+```
+mvn verify
+```
+
+You will see the following output:
+
+[role="no_copy"]
+----
+ -------------------------------------------------------
+  T E S T S
+ -------------------------------------------------------
+ Running it.io.openliberty.guides.rest.SystemResourceIT
+
+ Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.891 s - in it.io.openliberty.guides.rest.SystemResourceIT
+
+ Results:
+
+ Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+----
+
+// =================================================================================================
+// Bootstrapping your application for testing
+// =================================================================================================
+== Bootstrapping your application for testing
+
+Navigate to the `start` directory to begin.
+
+The `start/src` directory contains a REST application that supports create, retrieve, update, and delete (CRUD) operations on a system inventory. You will write integration tests for the application using Testcontainers to run it in a Docker container.
+
+// file 0
+pom.xml
+[source, XML, linenums, role='code_column']
+----
+include::finish/pom.xml[]
+----
+
+The necessary test dependencies, including Testcontainers Core and JUnit Jupiter extension libraries, are already added to the pom.xml Maven configuration file for you. These allow you to utilize Testcontainers in integration tests conveniently. 
+
+The Testcontainers Core dependency offers a general-purpose API for managing container-based test environments. The Testcontainers JUnit Jupiter extension dependency provides integration with the JUnit 5 testing framework. 
+
+To run integration tests in a production-like environment, deploy the test application to a container to ensure a complete and functional setup.
+
+Run the `mvn package` command so that the `.war` file resides in the `target` directory:
+
+[role='command']
+```
+mvn package
+```
+
+Run the following command to download or update to the latest Open Liberty Docker image, if not already done:
+
+[role='command']
+```
+docker pull icr.io/appcafe/open-liberty:full-java11-openj9-ubi
+```
+
+Dockerfile has already been set up for you. Build your Docker image with the following commands:
+
+[role='command']
+```
+docker build -t testcontainers:1.0-SNAPSHOT .
+```
+
+To verify that the images are built, run the docker images command to list all local Docker images:
+
+[role='command']
+```
+docker images
+```
+
+Your `testcontainers` image appears in the list of Docker images:
+
+[role="no_copy"]
+----
+REPOSITORY        TAG             IMAGE ID        CREATED           SIZE
+testcontainers    1.0-SNAPSHOT    5b67ed3a559b    27 seconds ago    1.03GB
+----
+
+
+[role="code_command hotspot file=1" ,subs="quotes"]
+----
+#Create the `LibertyContainer.java` file.#
+`src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java`
+----
+
+// file 1
+LibertyContainer.java
+[source, java, linenums, role="code_column hide_tags=copyright,createRestClient,getBaseURL"]
+----
+include::finish/src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java[]
+----
+
+The [hotspot=LibertyContainer file=1]`LibertyContainer` class extends the [hotspot=GenericContainer file=1]`GenericContainer` from the Testcontainers Core library to create a custom container for the Liberty server. 
+
+The [hotspot=getProtocol file=1]`getProtocol()` and [hotspot=testHttps file=1]`testHttps()` methods are used to determine whether to run tests using HTTPS. 
+
+The [hotspot=constructor file=1]`LibertyContainer()` class constructor accepts a Docker image to use for the container, sets up a wait strategy to ensure the Liberty server starts before running tests, and initializes the container environment with the [hotspot=init file=1]`init()` method.
+
+The [hotspot=addExposedPorts1 hotspot=addExposedPorts2 file=1]`addExposedPorts(port)` method exposes specified ports from the container's perspective, allowing test clients to communicate with services running inside the container. To prevent port conflicts, Testcontainers assigns random host ports to these exposed container ports. When HTTPS is enabled, the keystore file loads, and a custom SSL context with a trust manager to trust all certificates for testing is created.
+
+
+[role="code_command hotspot file=2" ,subs="quotes"]
+----
+#Create the `SystemResourceIT.java` file.#
+`src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java`
+----
+
+// file 2
+SystemResourceIT.java
+[source, java, linenums, role="code_column hide_tags=copyright,SystemResourceClient,setupTestClass,showSystemData,testcases"]
+----
+include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
+----
+
+Annotate the `SystemResourceIT` class with [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation, define the [hotspot=libertyContainer file=2]`libertyContainer` test container to start up the `testcontainers` docker image, and annotate the application with [hotspot=container-annotation file=2]`@Container` annotation.
+
+The [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation enables Testcontainers support for this class.
+
+The [hotspot=container-annotation file=2]`@Container` annotation in Testcontainers marks a field as a container instance within a test class, allowing the framework to manage the container's lifecycle automatically. When running a test class with the @Testcontainers annotation, the framework starts and stops all fields or properties marked with @Container, ensuring proper setup and cleanup. This simplifies test setup and teardown, letting you focus on writing test logic.
+
+The [hotspot=waitingFor file=2]`waitingFor(Wait.forHttp(String))` method configures a custom readiness check for Testcontainers. It ensures the application server is fully initialized and returns an HTTP 200 status code at the specified endpoint before allowing any tests to run. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^] for full details.
+
+// =================================================================================================
+// Enabling trace logging
+// =================================================================================================
+== Enabling trace logging
+
+// file 0
+pom.xml
+[source, XML, linenums, role='code_column']
+----
+include::finish/pom.xml[]
+----
+
+Having reliable logs is essential in software development and testing, as they provide valuable insights into the application's behavior, making it easier to identify and resolve issues during test failures. Testcontainers' built-in `Slf4jLogConsumer` enables seamless integration of container output with the JUnit process, streamlining log analysis and simplifying test creation and debugging.
+
+To utilize `Slf4jLogConsumer`, the necessary [hotspot=slf4j-log4j12 file=0]`slf4j-log4j12` dependency is already included in the `pom.xml` file for you.
+
+Create the log4j properties to configure the logging behavior in your tests when using the Testcontainers framework.
+
+[role="code_command hotspot file=1" ,subs="quotes"]
+----
+#Create the `log4j.properties` file.#
+`src/test/resources/log4j.properties`
+----
+
+// file 1
+log4j.properties
+[source, properties, linenums, role='code_column']
+----
+include::finish/src/test/resources/log4j.properties[]
+----
+
+The `log4j.properties` file sets up the root logger, appenders, and layouts for console output. It also configures the logging level specifically for the [hotspot=package file=1]`it.io.openliberty.guides.rest` package to be at the `DEBUG` level. This configuration helps you to get more detailed log information for the specified package, which can be useful for debugging and understanding the behavior of your tests in combination with Testcontainers.
+
+For more information about log4j properties and configuration, refer to the https://logging.apache.org/log4j/1.2/manual.html[Log4j 1.2 official documentation^].
+
+// file 2
+LibertyContainer.java
+[source, java, linenums, role="code_column hide_tags=copyright,createRestClient,getBaseURL"]
+----
+include::finish/src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java[]
+----
+
+// file 3
+SystemResourceIT.java
+[source, java, linenums, role="code_column hide_tags=copyright,SystemResourceClient,setupTestClass,showSystemData,testcases"]
+----
+include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
+----
+
+Note that logger instances are already created in both [hotspot=logger file=2]`LibertyContainer.java` and [hotspot=logger file=3]`SystemResource.java` files using the `LoggerFactory.getLogger()` method. To integrate container logs with the logger instance, Testcontainers provides the [hotspot=withLogConsumer file=3]`withLogConsumer(new Slf4jLogConsumer(Logger))` method, which pipes the container output to the specified logger.
+
+// =================================================================================================
+// Talking to your application with a REST client
+// =================================================================================================
+== Talking to your application with a REST client
+
+At this stage, your application can be easily started in a container as part of the test lifecycle. The next step involves implementing a RESTful client interface to efficiently send HTTP test requests. This streamlines interactions with the app's REST endpoints and ensures thorough, effective testing under various conditions, ultimately improving your microservice's overall quality.
+
+[role="code_command hotspot file=0" ,subs="quotes"]
+----
+#Create the `SystemResourceClient.java` file.#
+`src/test/java/it/io/openliberty/guides/rest/SystemResourceClient.java`
+----
+
+// file 0
+SystemResourceClient.java
+[source, java, linenums, role="code_column hide_tags=copyright"]
+----
+include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceClient.java[]
+----
+
+The `SystemResourceClient` RESTful client interface declares [hotspot=listContents file=0]`listContents()`, [hotspot=getSystem file=0]`getSystem()`, [hotspot=addSystem file=0]`addSystem()`, [hotspot=updateSystem file=0]`updateSystem()`, and [hotspot=removeSystem file=0]`removeSystem()` methods for accessing each of the endpoints that are set up to access the RESTful application.
+
 
 // =================================================================================================
 // Great work! You're done!
 // =================================================================================================
-
 == Great work! You're done!
 
 You just learned how to use ...

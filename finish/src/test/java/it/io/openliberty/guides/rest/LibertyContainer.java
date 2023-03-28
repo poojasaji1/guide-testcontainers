@@ -1,6 +1,6 @@
 // tag::copyright[]
 /*******************************************************************************
- * Copyright (c) 2022, 2023 IBM Corporation and others.
+ * Copyright (c) 2023 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -37,29 +37,40 @@ import jakarta.ws.rs.client.ClientBuilder;
 // simple import to build a URI/URL
 import jakarta.ws.rs.core.UriBuilder;
 
+// tag::LibertyContainer[]
+// tag::GenericContainer[]
 public class LibertyContainer extends GenericContainer<LibertyContainer> {
+// end::GenericContainer[]
 
+    // tag::logger[]
     static final Logger LOGGER = LoggerFactory.getLogger(LibertyContainer.class);
+    // end::logger[]
 
     private String baseURL;
 
     private KeyStore keystore;
     private SSLContext sslContext;
 
+    // tag::getProtocol[]
     public static String getProtocol() {
         return System.getProperty("test.protocol", "https");
     }
+    // end::getProtocol[]
 
+    // tag::testHttps[]
     public static boolean testHttps() {
         return getProtocol().equalsIgnoreCase("https");
     }
+    // end::testHttps[]
 
+    // tag::constructor[]
     public LibertyContainer(final String dockerImageName) {
         super(dockerImageName);
         // wait for smarter planet message by default
         waitingFor(Wait.forLogMessage("^.*CWWKF0011I.*$", 1));
         init();
     }
+    // end::constructor[]
 
     // tag::createRestClient[]
     public <T> T createRestClient(Class<T> clazz, String applicationPath) {
@@ -94,14 +105,19 @@ public class LibertyContainer extends GenericContainer<LibertyContainer> {
     }
     // end::getBaseURL[]
 
+    // tag::init[]
     private void init() {
 
         if (!testHttps()) {
+            // tag::addExposedPorts1[]
             this.addExposedPorts(9080);
+            // end::addExposedPorts1[]
             return;
         }
 
+        // tag::addExposedPorts2[]
         this.addExposedPorts(9443, 9080);
+        // tag::addExposedPorts2[]
         try {
             String keystoreFile = System.getProperty("user.dir")
                     + "/src/main/liberty/config/resources/security/key.p12";
@@ -133,4 +149,6 @@ public class LibertyContainer extends GenericContainer<LibertyContainer> {
             e.printStackTrace();
         }
     }
+    // end::init[]
 }
+// end::LibertyContainer[]
