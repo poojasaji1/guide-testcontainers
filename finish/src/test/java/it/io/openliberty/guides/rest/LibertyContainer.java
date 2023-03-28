@@ -30,7 +30,9 @@ import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 // testcontainers imports
+// tag::GenericContainer[]
 import org.testcontainers.containers.GenericContainer;
+// end::GenericContainer[]
 import org.testcontainers.containers.wait.strategy.Wait;
 
 import jakarta.ws.rs.client.ClientBuilder;
@@ -38,9 +40,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.UriBuilder;
 
 // tag::LibertyContainer[]
-// tag::GenericContainer[]
 public class LibertyContainer extends GenericContainer<LibertyContainer> {
-// end::GenericContainer[]
 
     // tag::logger[]
     static final Logger LOGGER = LoggerFactory.getLogger(LibertyContainer.class);
@@ -117,10 +117,12 @@ public class LibertyContainer extends GenericContainer<LibertyContainer> {
 
         // tag::addExposedPorts2[]
         this.addExposedPorts(9443, 9080);
-        // tag::addExposedPorts2[]
+        // end::addExposedPorts2[]
         try {
+            // tag::key-p12[]
             String keystoreFile = System.getProperty("user.dir")
                     + "/src/main/liberty/config/resources/security/key.p12";
+            // end::key-p12[]
             keystore = KeyStore.getInstance("PKCS12");
             keystore.load(new FileInputStream(keystoreFile), "secret".toCharArray());
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(

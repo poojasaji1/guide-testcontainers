@@ -28,13 +28,13 @@ Learn how to test a MicroProfile or Jakarta EE application in true-to-production
 
 == What you'll learn
 
-You'll learn how to write integration tests for a MicroProfile microservice or a Jakarta EE application and run them in production-like settings using https://www.testcontainers.org/[Testcontainers^]. 
+You'll learn how to write integration tests for a MicroProfile microservice or a Jakarta EE application and run them in production-like settings by using https://www.testcontainers.org/[Testcontainers^]. 
 
 Sometimes tests might pass in development and testing (dev/test) environments, but fail in production because the application runs differently in production than in dev/test. By testing your containerized application from outside the container, you can ensure that the exact same image running in production is tested, minimizing the differences between dev/test and production environments.
 
 === What is Testcontainers?
 
-Testcontainers is an open-source library that wraps Docker in a Java API and offers seamless integration with JUnit. It is particularly useful for testing applications with external resource dependencies such as databases, message queues, or web services. One of its most crucial features is the generic support for any Docker image, allowing you to leverage the consistency and portability of Docker containers for testing.
+Testcontainers is an open source library that wraps Docker in a Java API and offers seamless integration with JUnit. It is useful for testing applications with external resource dependencies such as databases, message queues, or web services. One of its most crucial features is the generic support for any Docker image, allowing you to leverage the consistency and portability of Docker containers for testing.
 
 // =================================================================================================
 // Additional prerequisites
@@ -110,7 +110,7 @@ You will see the following output:
 
 Navigate to the `start` directory to begin.
 
-The `start/src` directory contains a REST application that supports create, retrieve, update, and delete (CRUD) operations on a system inventory. You will write integration tests for the application using Testcontainers to run it in a Docker container.
+The `start/src` directory contains a REST application that supports create, retrieve, update, and delete (CRUD) operations on a system inventory. You will write integration tests for the application by using Testcontainers to run it in a Docker container.
 
 // file 0
 pom.xml
@@ -119,7 +119,7 @@ pom.xml
 include::finish/pom.xml[]
 ----
 
-The necessary test dependencies, including [hotspot=testcontainers file=0]`testcontainers` and Testcontainers [hotspot=testcontainers-junit file=0]`junit-jupiter` extension, have already been added to the `pom.xml` Maven configuration file for you. The [hotspot=testcontainers file=0]`testcontainers` dependency offers a general-purpose API for managing container-based test environments. The Testcontainers [hotspot=testcontainers-junit file=0]`junit-jupiter` extension dependency provides integration with the JUnit 5 testing framework. 
+The necessary test dependencies, including [hotspot=testcontainers file=0]`testcontainers` and Testcontainers' [hotspot=testcontainers-junit file=0]`junit-jupiter` extension, have already been added to the `pom.xml` Maven configuration file for you. The [hotspot=testcontainers file=0]`testcontainers` dependency offers a general-purpose API for managing container-based test environments. The Testcontainers [hotspot=testcontainers-junit file=0]`junit-jupiter` extension dependency provides integration with the JUnit5 testing framework. 
 
 To run integration tests in a production-like environment, you first need to deploy the test application to a container.
 
@@ -159,6 +159,7 @@ REPOSITORY        TAG             IMAGE ID        CREATED           SIZE
 testcontainers    1.0-SNAPSHOT    5b67ed3a559b    27 seconds ago    1.03GB
 ----
 
+Next, create the test container class that accesses and configures a Liberty container.
 
 [role="code_command hotspot file=1" ,subs="quotes"]
 ----
@@ -173,14 +174,15 @@ LibertyContainer.java
 include::finish/src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java[]
 ----
 
-The [hotspot=LibertyContainer file=1]`LibertyContainer` class extends the [hotspot=GenericContainer file=1]`GenericContainer` from the Testcontainers Core library to create a custom container for the Liberty server. 
+The [hotspot=LibertyContainer file=1]`LibertyContainer` class extends the [hotspot=GenericContainer file=1]`GenericContainer` from the [hotspot=testcontainers file=0]`testcontainers` library to create a custom container for the Liberty server. 
 
 The [hotspot=getProtocol file=1]`getProtocol()` and [hotspot=testHttps file=1]`testHttps()` methods are used to determine whether to run tests using HTTPS. 
 
-The [hotspot=constructor file=1]`LibertyContainer()` class constructor accepts a Docker image to use for the container, sets up a wait strategy to ensure the Liberty server starts before running tests, and initializes the container environment with the [hotspot=init file=1]`init()` method.
+The [hotspot=constructor file=1]`LibertyContainer` class constructor accepts a Docker image to use for the container, sets up a wait strategy to ensure the Liberty server starts before running the tests, and initializes the container environment with the [hotspot=init file=1]`init()` method.
 
-The [hotspot=addExposedPorts1 hotspot=addExposedPorts2 file=1]`addExposedPorts(port)` method exposes specified ports from the container's perspective, allowing test clients to communicate with services running inside the container. To prevent port conflicts, Testcontainers assigns random host ports to these exposed container ports. When HTTPS is enabled, the keystore file loads, and a custom SSL context with a trust manager to trust all certificates for testing is created.
+The [hotspot=addExposedPorts1 hotspot=addExposedPorts2 file=1]`addExposedPorts(port)` method exposes specified ports from the container's perspective, allowing test clients to communicate with services running inside the container. To prevent port conflicts, Testcontainers assigns random host ports to these exposed container ports. When HTTPS is enabled, the [hotspot=key-p12 file=1]`key.p12` keystore file loads, and a custom SSL context is created with a trust manager to trust all certificates for testing.
 
+The `SystemResourceIT` class outlines some basic information that informs how Testcontainers starts the application runtime and at which URL path the application is available:
 
 [role="code_command hotspot file=2" ,subs="quotes"]
 ----
@@ -195,13 +197,11 @@ SystemResourceIT.java
 include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
 ----
 
-Annotate the `SystemResourceIT` class with [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation, define the [hotspot=libertyContainer file=2]`libertyContainer` test container to start up the `testcontainers` Docker image, and annotate the application with [hotspot=container-annotation file=2]`@Container` annotation.
+Annotate the `SystemResourceIT` class with the [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation and initialize a [hotspot=libertyContainer file=2]`LibertyContainer` instance to access the `testcontainers` Docker image with the [hotspot=container-annotation file=2]`@Container` annotation.
 
-The [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation enables Testcontainers support for this class.
+The [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation enables Testcontainers support for the class. The [hotspot=container-annotation file=2]`@Container` annotation marks the `libertyContainer` as a container instance in the class, which allows Testcontainers to manage the container's lifecycle automatically. The `@Testcontainers` annotation automatically starts and stops all fields or properties that are marked with `@Container` during test class execution, ensuring proper setup and cleanup for tests.
 
-The [hotspot=container-annotation file=2]`@Container` annotation in Testcontainers marks a field as a container instance within a test class, allowing the framework to manage the container's lifecycle automatically. When running a test class with the @Testcontainers annotation, the framework starts and stops all fields or properties marked with @Container, ensuring proper setup and cleanup. This simplifies test setup and teardown, letting you focus on writing test logic.
-
-The [hotspot=waitingFor file=2]`waitingFor(Wait.forHttp(String))` method configures a custom readiness check for Testcontainers. It ensures the application server is fully initialized and returns an HTTP 200 status code at the specified endpoint before allowing any tests to run. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^] for full details.
+The [hotspot=waitingFor file=2]`waitingFor(Wait.forHttp(String))` method configures a custom readiness check for Testcontainers. It ensures that the application server is fully initialized and returns an HTTP 200 status code at the specified endpoint before allowing any tests to run. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^] for full details.
 
 // =================================================================================================
 // Enabling trace logging
@@ -217,9 +217,9 @@ include::finish/pom.xml[]
 
 Having reliable logs is essential in software development and testing, as they provide valuable insights into the application's behavior, making it easier to identify and resolve issues during test failures. Testcontainers' built-in `Slf4jLogConsumer` enables seamless integration of container output with the JUnit process, streamlining log analysis and simplifying test creation and debugging.
 
-To utilize `Slf4jLogConsumer`, the necessary [hotspot=slf4j-log4j12 file=0]`slf4j-log4j12` dependency is already included in the `pom.xml` file for you.
+To use `Slf4jLogConsumer`, the necessary [hotspot=slf4j-log4j12 file=0]`slf4j-log4j12` dependency is already included in the Maven `pom.xml` file for you.
 
-Create the log4j properties to configure the logging behavior in your tests when using the Testcontainers framework.
+Create the log4j properties to configure the logging behavior in your tests.
 
 [role="code_command hotspot file=1" ,subs="quotes"]
 ----
@@ -234,9 +234,9 @@ log4j.properties
 include::finish/src/test/resources/log4j.properties[]
 ----
 
-The `log4j.properties` file sets up the root logger, appenders, and layouts for console output. It also configures the logging level specifically for the [hotspot=package file=1]`it.io.openliberty.guides.rest` package to be at the `DEBUG` level. This configuration helps you to get more detailed log information for the specified package, which can be useful for debugging and understanding the behavior of your tests in combination with Testcontainers.
+The [hotspot file=1]`log4j.properties` file sets up the root logger, appenders, and layouts for console output, and configures the logging level to `DEBUG` for the [hotspot=package file=1]`it.io.openliberty.guides.rest` package. 
 
-For more information about log4j properties and configuration, refer to the https://logging.apache.org/log4j/1.2/manual.html[Log4j 1.2 official documentation^].
+By setting the log level to `DEBUG`, you can obtain more detailed logging information for the specified package, which can be helpful for debugging and understanding test behavior. For more information about log4j properties and configuration, see the https://logging.apache.org/log4j/1.2/manual.html[Log4j 1.2 official documentation^].
 
 // file 2
 LibertyContainer.java
@@ -252,16 +252,16 @@ SystemResourceIT.java
 include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
 ----
 
-Note that logger instances are already created in both [hotspot=logger file=2]`LibertyContainer.java` and [hotspot=logger file=3]`SystemResource.java` files using the `LoggerFactory.getLogger()` method. To integrate container logs with the logger instance, Testcontainers provides the [hotspot=withLogConsumer file=3]`withLogConsumer(new Slf4jLogConsumer(Logger))` method, which pipes the container output to the specified logger.
+Note that logger instances have already been created in both [hotspot=logger file=2]`LibertyContainer.java` and [hotspot=logger file=3]`SystemResource.java` files by using the `LoggerFactory.getLogger()` method. To integrate container logs with the logger instance, Testcontainers provides the [hotspot=withLogConsumer file=3]`withLogConsumer(new Slf4jLogConsumer(Logger))` method, which pipes the container output to the specified logger.
 
 // =================================================================================================
 // Talking to your application with a REST client
 // =================================================================================================
 == Talking to your application with a REST client
 
-At this stage, your application can be easily started in a container as part of the test lifecycle. The next step involves implementing a RESTful client interface to efficiently send HTTP test requests. This streamlines interactions with the app's REST endpoints and ensures thorough, effective testing under various conditions, ultimately improving your microservice's overall quality.
+At this stage, your application can be easily started in a container as part of the test lifecycle. The next step involves implementing a RESTful client interface to efficiently send HTTP test requests. 
 
-First, you'll create a RESTful client interface for the application.
+First, create a RESTful client interface for the application.
 
 [role="code_command hotspot file=0" ,subs="quotes"]
 ----
@@ -276,7 +276,9 @@ SystemResourceClient.java
 include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceClient.java[]
 ----
 
-The `SystemResourceClient` RESTful client interface declares [hotspot=listContents file=0]`listContents()`, [hotspot=getSystem file=0]`getSystem()`, [hotspot=addSystem file=0]`addSystem()`, [hotspot=updateSystem file=0]`updateSystem()`, and [hotspot=removeSystem file=0]`removeSystem()` methods for accessing each of the endpoints that are set up to access the RESTful application.
+The `SystemResourceClient` RESTful client interface declares [hotspot=listContents file=0]`listContents()`, [hotspot=getSystem file=0]`getSystem()`, [hotspot=addSystem file=0]`addSystem()`, [hotspot=updateSystem file=0]`updateSystem()`, and [hotspot=removeSystem file=0]`removeSystem()` methods for accessing each of the endpoints that are set up to access the REST application.
+
+Next, create a REST client instance with the `SystemResourceClient` interface and construct the URL that can access the `testcontainers` Docker image.
 
 [role="code_command hotspot file=1" ,subs="quotes"]
 ----
@@ -291,7 +293,7 @@ LibertyContainer.java
 include::finish/src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java[]
 ----
 
-The [hotspot=createRestClient file=1]`createRestClient()` method generates a REST client instance using the provided class and application path. The [hotspot=getBaseURL file=1]`getBaseURL()` method constructs the URL for accessing the Docker image specified in the constructor.
+The [hotspot=createRestClient file=1]`createRestClient()` method generates a REST client instance by using the provided class and application path. The [hotspot=getBaseURL file=1]`getBaseURL()` method constructs the URL for accessing the Docker image that is specified in the class constructor.
 
 [role="code_command hotspot file=2" ,subs="quotes"]
 ----
@@ -306,14 +308,14 @@ SystemResourceIT.java
 include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
 ----
 
-The [hotspot=setupTestClass file=2]`setupTestClass()` method initializes the [hotspot=SystemResourceClient file=2]`SystemResourceClient` REST client by invoking the [hotspot=createRestClient file=1]`LibertyContainer.createRestClient()` method with the `SystemResourceClient` interface. During this process, the [hotspot=getBaseURL file=1]`LibertyContainer.getBaseURL()` method is called to construct the URL for accessing the [hotspot=appImageName file=2]`testcontainers` Docker image.
+The [hotspot=setupTestClass file=2]`setupTestClass()` method initializes a [hotspot=SystemResourceClient file=2]`SystemResourceClient` REST client by invoking the [hotspot=createRestClient file=1]`LibertyContainer.createRestClient()` method with the `SystemResourceClient` interface. During this process, the [hotspot=getBaseURL file=1]`LibertyContainer.getBaseURL()` method is called to construct the URL for accessing the [hotspot=appImageName file=2]`testcontainers` Docker image.
 
 // =================================================================================================
 // Testing your container
 // =================================================================================================
 == Testing your container
 
-Now that the setup is complete, you can write your integration test cases. To test your application, utilize the initialized `SystemResourceClient` REST client to make HTTP POST requests and read the responses.
+Now that the setup is complete, you can write your integration test cases. To test your application, use the initialized `SystemResourceClient` REST client to make HTTP POST requests and read the responses.
 
 [role="code_command hotspot file=0" ,subs="quotes"]
 ----
@@ -343,9 +345,9 @@ pom.xml
 include::finish/pom.xml[]
 ----
 
-The [hotspot=failsafe file=0]`maven-failsafe-plugin` has already been included in your Maven `pom.xml` file. This enables integration tests to be run using the Maven `verify` goal.
+The [hotspot=failsafe file=0]`maven-failsafe-plugin` has already been included in your Maven `pom.xml` file to enable integration tests to be run by using the Maven `verify` goal.
 
-Run the Maven `verify` goal, which compiles the java files, starts the containers, runs the tests, and then stops the containers.
+Run the Maven `verify` goal, which compiles the java files, starts the containers, runs the tests, and then stops the containers:
 
 [role='command']
 ```
@@ -373,6 +375,6 @@ Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
 // =================================================================================================
 == Great work! You're done!
 
-You just learned how to use ...
+You just tested a reactive MicroProfile microservice using Testcontainers.
 
 include::{common-includes}/attribution.adoc[subs="attributes"]
