@@ -217,7 +217,7 @@ include::finish/pom.xml[]
 
 Having reliable logs is essential in software development and testing, as they provide valuable insights into the application's behavior, making it easier to identify and resolve issues during test failures. Testcontainers' built-in `Slf4jLogConsumer` enables seamless integration of container output with the JUnit process, streamlining log analysis and simplifying test creation and debugging.
 
-To use `Slf4jLogConsumer`, the necessary [hotspot=slf4j-log4j12 file=0]`slf4j-log4j12` dependency is already included in the Maven `pom.xml` file for you.
+To use `Slf4jLogConsumer`, the necessary [hotspot=slf4j-log4j12 file=0]`slf4j-reload4j` dependency is already included in the Maven `pom.xml` file for you.
 
 Create the log4j properties to configure the logging behavior in your tests.
 
