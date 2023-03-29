@@ -53,7 +53,8 @@ public class SystemResourceIT {
     public static LibertyContainer libertyContainer
         = new LibertyContainer(appImageName)
               // tag::waitingFor[]
-              .waitingFor(Wait.forHttp(appPath + "/systems"))
+              .waitingFor(Wait.forHttp(appPath + "/systems")
+                              .forPort(9080))
               // end::waitingFor[]
               // tag::withLogConsumer[]
               .withLogConsumer(new Slf4jLogConsumer(logger));

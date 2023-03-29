@@ -201,7 +201,7 @@ Annotate the `SystemResourceIT` class with the [hotspot=testcontainers-annotatio
 
 The [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation enables Testcontainers support for the class. The [hotspot=container-annotation file=2]`@Container` annotation marks the `libertyContainer` as a container instance in the class, which allows Testcontainers to manage the container's lifecycle automatically. The `@Testcontainers` annotation automatically starts and stops all fields or properties that are marked with `@Container` during test class execution, ensuring proper setup and cleanup for tests.
 
-The [hotspot=waitingFor file=2]`waitingFor(Wait.forHttp(String))` method configures a custom readiness check for Testcontainers. It ensures that the application server is fully initialized and returns an HTTP 200 status code at the specified endpoint before allowing any tests to run. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^] for full details.
+The [hotspot=waitingFor file=2]`waitingFor(Wait.forHttp(String).forPort(port))` method configures a custom readiness check for Testcontainers. It ensures that the application server is fully initialized and returns an HTTP 200 status code at the specified endpoint and port before allowing any tests to run. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^] for full details.
 
 // =================================================================================================
 // Enabling trace logging
