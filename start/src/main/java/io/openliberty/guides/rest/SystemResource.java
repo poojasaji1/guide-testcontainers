@@ -9,11 +9,11 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 // end::copyright[]
-package io.openliberty.guides.inventory;
+package io.openliberty.guides.rest;
 
 import java.util.List;
 
-import io.openliberty.guides.inventory.model.SystemData;
+import io.openliberty.guides.rest.model.SystemData;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -110,14 +110,6 @@ public class SystemResource {
         } else {
             return fail(hostname + " does not exists.");
         }
-    }
-
-    @POST
-    @Path("/client/{hostname}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response addSystemClient(@PathParam("hostname") String hostname) {
-        return fail("This api is not implemented yet.");
     }
 
     private Response success(String message) {
