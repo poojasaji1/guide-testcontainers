@@ -22,7 +22,7 @@
     <!-- Automatically expand WAR files and EAR files -->
     <!-- <applicationManager autoExpand="true"/> -->
 
-    <webApplication location="inventory.war" contextRoot="${default.context.root}" /> 
+    <webApplication location="guide-testcontainers.war" contextRoot="${default.context.root}" /> 
 
     <!-- Default SSL configuration enables trust for default certificates from the Java runtime -->
     <ssl id="defaultSSLConfig" trustDefaultCerts="true" />
@@ -45,8 +45,3 @@
     </dataSource>
     <!-- end::dataSource[] -->
 </server>
-
-<!-- 
-    <httpEndpoint id="defaultHttpEndpoint"
-                  httpPort="${default.http.port}" 
-                  httpsPort="${default.https.port}" /> -->
