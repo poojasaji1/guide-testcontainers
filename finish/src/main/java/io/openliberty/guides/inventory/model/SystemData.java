@@ -13,8 +13,6 @@ package io.openliberty.guides.inventory.model;
 
 import java.io.Serializable;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -24,8 +22,6 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
-@Schema(name = "SystemData",
-        description = "POJO that represents a single inventory entry.")
 @Entity
 @Table(name = "SystemData")
 @NamedQuery(name = "SystemData.findAll", query = "SELECT e FROM SystemData e")
@@ -42,7 +38,6 @@ public class SystemData implements Serializable {
     @Column(name = "id")
     private int id;
 
-    @Schema(required = true)
     @Column(name = "hostname")
     private String hostname;
 

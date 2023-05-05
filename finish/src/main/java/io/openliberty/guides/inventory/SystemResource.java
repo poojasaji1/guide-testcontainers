@@ -13,18 +13,6 @@ package io.openliberty.guides.inventory;
 
 import java.util.List;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponseSchema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import io.openliberty.guides.inventory.model.SystemData;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -51,25 +39,9 @@ public class SystemResource {
     Inventory inventory;
     // end::inventory[]
 
-    // tag::inject[]
-    @Inject
-    // end::inject[]
-    // tag::configProperty[]
-    @ConfigProperty(name = "client.https.port")
-    // end::configProperty[]
-    String CLIENT_PORT;
-
-
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    @APIResponseSchema(value = SystemData.class,
-        responseDescription = "A list of system data stored within the inventory.",
-        responseCode = "200")
-    @Operation(
-        summary = "List contents.",
-        description = "Returns the currently stored system data in the inventory.",
-        operationId = "listContents")
     public List<SystemData> listContents() {
         return inventory.getSystems();
     }
@@ -77,22 +49,7 @@ public class SystemResource {
     @GET
     @Path("/{hostname}")
     @Produces(MediaType.APPLICATION_JSON)
-    @APIResponseSchema(value = SystemData.class,
-        responseDescription = "System data of a particular host.",
-        responseCode = "200")
-    @Operation(
-        summary = "Get System",
-        description = "Retrieves and returns the system data from the system "
-                      + "service running on the particular host.",
-        operationId = "getSystem"
-    )
     public SystemData getSystem(
-        @Parameter(
-            name = "hostname", in = ParameterIn.PATH,
-            description = "The hostname of the system",
-            required = true, example = "localhost",
-            schema = @Schema(type = SchemaType.STRING)
-        )
         @PathParam("hostname") String hostname) {
         return inventory.getSystem(hostname);
     }
@@ -103,39 +60,6 @@ public class SystemResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     // end::postTransactional[]
-    @APIResponses(value = {
-        @APIResponse(responseCode = "200",
-            description = "Successfully added system to inventory"),
-        @APIResponse(responseCode = "400",
-            description = "Unable to add system to inventory")
-    })
-    @Parameters(value = {
-        @Parameter(
-            name = "hostname", in = ParameterIn.QUERY,
-            description = "The hostname of the system",
-            required = true, example = "localhost",
-            schema = @Schema(type = SchemaType.STRING)),
-        @Parameter(
-            name = "osName", in = ParameterIn.QUERY,
-            description = "The operating system of the system",
-            required = true, example = "linux",
-            schema = @Schema(type = SchemaType.STRING)),
-        @Parameter(
-            name = "javaVersion", in = ParameterIn.QUERY,
-            description = "The Java version of the system",
-            required = true, example = "11",
-            schema = @Schema(type = SchemaType.STRING)),
-        @Parameter(
-            name = "heapSize", in = ParameterIn.QUERY,
-            description = "The heap size of the system",
-            required = true, example = "1048576",
-            schema = @Schema(type = SchemaType.NUMBER)),
-    })
-    @Operation(
-        summary = "Add system",
-        description = "Add a system and its data to the inventory.",
-        operationId = "addSystem"
-    )
     public Response addSystem(
         @QueryParam("hostname") String hostname,
         @QueryParam("osName") String osName,
@@ -157,40 +81,6 @@ public class SystemResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     // end::putTransactional[]
-    @APIResponses(value = {
-        @APIResponse(responseCode = "200",
-            description = "Successfully updated system"),
-        @APIResponse(responseCode = "400",
-           description =
-               "Unable to update because the system does not exist in the inventory.")
-    })
-    @Parameters(value = {
-        @Parameter(
-            name = "hostname", in = ParameterIn.PATH,
-            description = "The hostname of the system",
-            required = true, example = "localhost",
-            schema = @Schema(type = SchemaType.STRING)),
-        @Parameter(
-            name = "osName", in = ParameterIn.QUERY,
-            description = "The operating system of the system",
-            required = true, example = "linux",
-            schema = @Schema(type = SchemaType.STRING)),
-        @Parameter(
-            name = "javaVersion", in = ParameterIn.QUERY,
-            description = "The Java version of the system",
-            required = true, example = "11",
-            schema = @Schema(type = SchemaType.STRING)),
-        @Parameter(
-            name = "heapSize", in = ParameterIn.QUERY,
-            description = "The heap size of the system",
-            required = true, example = "1048576",
-            schema = @Schema(type = SchemaType.NUMBER)),
-    })
-    @Operation(
-        summary = "Update system",
-        description = "Update a system and its data on the inventory.",
-        operationId = "updateSystem"
-    )
     public Response updateSystem(
         @PathParam("hostname") String hostname,
         @QueryParam("osName") String osName,
@@ -214,24 +104,6 @@ public class SystemResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     // end::deleteTransactional[]
-    @APIResponses(value = {
-        @APIResponse(responseCode = "200",
-            description = "Successfully deleted the system from inventory"),
-        @APIResponse(responseCode = "400",
-            description =
-                "Unable to delete because the system does not exist in the inventory")
-    })
-    @Parameter(
-        name = "hostname", in = ParameterIn.PATH,
-        description = "The hostname of the system",
-        required = true, example = "localhost",
-        schema = @Schema(type = SchemaType.STRING)
-    )
-    @Operation(
-        summary = "Remove system",
-        description = "Removes a system from the inventory.",
-        operationId = "removeSystem"
-    )
     public Response removeSystem(@PathParam("hostname") String hostname) {
         SystemData s = inventory.getSystem(hostname);
         if (s != null) {
@@ -241,35 +113,6 @@ public class SystemResource {
             return fail(hostname + " does not exists.");
         }
     }
-
-    @POST
-    @Path("/client/{hostname}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Transactional
-    @APIResponses(value = {
-        @APIResponse(responseCode = "200",
-            description = "Successfully added system client"),
-        @APIResponse(responseCode = "400",
-            description = "Unable to add system client")
-    })
-    @Parameter(
-        name = "hostname", in = ParameterIn.PATH,
-        description = "The hostname of the system",
-        required = true, example = "localhost",
-        schema = @Schema(type = SchemaType.STRING)
-    )
-    @Operation(
-        summary = "Add system client",
-        description = "This adds a system client.",
-        operationId = "addSystemClient"
-    )
-    //tag::printClientPort[]
-    public Response addSystemClient(@PathParam("hostname") String hostname) {
-        System.out.println(CLIENT_PORT);
-        return success("Client Port: " + CLIENT_PORT);
-    }
-    //end::printClientPort[]
 
     private Response success(String message) {
         return Response.ok("{ \"ok\" : \"" + message + "\" }").build();

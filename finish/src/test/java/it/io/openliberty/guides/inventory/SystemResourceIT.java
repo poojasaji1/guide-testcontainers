@@ -9,12 +9,12 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 // end::copyright[]
-package it.io.openliberty.guides.rest;
+package it.io.openliberty.guides.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-import io.openliberty.guides.rest.model.SystemData;
+import io.openliberty.guides.inventory.model.SystemData;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
@@ -38,6 +40,8 @@ public class SystemResourceIT {
     private static Logger logger = LoggerFactory.getLogger(SystemResourceIT.class);
     // end::logger[]
     private static String appPath = "/inventory/api";
+    private static String postgresHost = "postgres";
+    private static String postgresImageName = "postgres-sample:latest";
     // tag::appImageName[]
     private static String appImageName = "testcontainers:1.0-SNAPSHOT";
     // end::appImageName[]
@@ -45,21 +49,9 @@ public class SystemResourceIT {
     // tag::SystemResourceClient[]
     public static SystemResourceClient client;
     // end::SystemResourceClient[]
-
-    // tag::libertyContainer[]
-    // tag::container-annotation[]
-    @Container
-    // end::container-annotation[]
-    public static LibertyContainer libertyContainer
-        = new LibertyContainer(appImageName)
-              // tag::waitingFor[]
-              .waitingFor(Wait.forHttp(appPath + "/systems")
-                              .forPort(9080))
-              // end::waitingFor[]
-              // tag::withLogConsumer[]
-              .withLogConsumer(new Slf4jLogConsumer(logger));
-              // end::withLogConsumer[]
-    // end::libertyContainer[]
+    // tag::network[]
+    public static Network network = Network.newNetwork();
+    // end::network[]
 
     @Container
     public static GenericContainer<?> postgresContainer
@@ -68,6 +60,25 @@ public class SystemResourceIT {
               .withExposedPorts(5432)
               .withNetworkAliases(postgresHost)
               .withLogConsumer(new Slf4jLogConsumer(logger));
+
+    // tag::libertyContainer[]
+    // tag::container-annotation[]
+    @Container
+    // end::container-annotation[]
+    public static LibertyContainer libertyContainer
+        = new LibertyContainer(appImageName)
+              .withEnv("POSTGRES_HOSTNAME", postgresHost)
+              // tag::lNetwork[]
+              .withNetwork(network)
+              // end::lNetwork[]
+              // tag::waitingFor[]
+              .waitingFor(Wait.forHttp(appPath + "/systems")
+                              .forPort(9080))
+              // end::waitingFor[]
+              // tag::withLogConsumer[]
+              .withLogConsumer(new Slf4jLogConsumer(logger));
+              // end::withLogConsumer[]
+    // end::libertyContainer[]
 
     // tag::setupTestClass[]
     @BeforeAll
