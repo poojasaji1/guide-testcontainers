@@ -61,6 +61,14 @@ public class SystemResourceIT {
               // end::withLogConsumer[]
     // end::libertyContainer[]
 
+    @Container
+    public static GenericContainer<?> postgresContainer
+        = new GenericContainer<>(postgresImageName)
+              .withNetwork(network)
+              .withExposedPorts(5432)
+              .withNetworkAliases(postgresHost)
+              .withLogConsumer(new Slf4jLogConsumer(logger));
+
     // tag::setupTestClass[]
     @BeforeAll
     public static void setupTestClass() throws Exception {
