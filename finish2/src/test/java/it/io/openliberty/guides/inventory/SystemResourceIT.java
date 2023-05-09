@@ -30,15 +30,21 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+// tag::testcontainers-annotation[]
 @Testcontainers
+// end::testcontainers-annotation[]
 @TestMethodOrder(OrderAnnotation.class)
 public class SystemResourceIT {
 
+    // tag::logger[]
     private static Logger logger = LoggerFactory.getLogger(SystemResourceIT.class);
+    // end::logger[]
     private static String appPath = "/inventory/api";
     private static String postgresHost = "postgres";
     private static String postgresImageName = "postgres-sample:latest";
+    // tag::appImageName[]
     private static String appImageName = "inventory:1.0-SNAPSHOT";
+    // end::appImageName[]
 
     public static SystemResourceClient client;
     // tag::network[]

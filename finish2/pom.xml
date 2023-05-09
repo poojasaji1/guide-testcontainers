@@ -17,6 +17,7 @@
         <liberty.var.default.http.port>9080</liberty.var.default.http.port>
         <liberty.var.default.https.port>9443</liberty.var.default.https.port>
         <liberty.var.default.context.root>/inventory</liberty.var.default.context.root>
+        <liberty.var.client.https.port>9444</liberty.var.client.https.port>
     </properties>
 
     <dependencies>
@@ -90,6 +91,18 @@
             <version>2.0.4</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib-nodep</artifactId>
+            <version>3.3.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-auth-jwt</artifactId>
+            <version>4.0.3</version>
+            <scope>test</scope>
+        </dependency>
         <!-- end::testDependenies[] -->
     </dependencies>
 
@@ -132,6 +145,7 @@
             <plugin>
                 <groupId>io.openliberty.tools</groupId>
                 <artifactId>liberty-maven-plugin</artifactId>
+
                 <configuration>
                     <copyDependencies>
                         <dependencyGroup>
@@ -144,6 +158,7 @@
                         </dependencyGroup>
                     </copyDependencies>
                 </configuration>
+
             </plugin>
             <!-- tag::failsafe[] -->
             <plugin>

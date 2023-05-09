@@ -153,4 +153,3 @@ public class LibertyContainer extends GenericContainer<LibertyContainer> {
     // end::init[]
 }
 // end::LibertyContainer[]
-
