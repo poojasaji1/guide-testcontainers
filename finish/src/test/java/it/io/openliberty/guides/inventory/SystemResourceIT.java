@@ -1,6 +1,6 @@
 // tag::copyright[]
 /*******************************************************************************
- * Copyright (c) 2023 IBM Corporation and others.
+ * Copyright (c) 2022, 2023 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -14,7 +14,6 @@ package it.io.openliberty.guides.inventory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-import io.openliberty.guides.inventory.model.SystemData;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -43,7 +42,7 @@ public class SystemResourceIT {
     private static String postgresHost = "postgres";
     private static String postgresImageName = "postgres-sample:latest";
     // tag::appImageName[]
-    private static String appImageName = "testcontainers:1.0-SNAPSHOT";
+    private static String appImageName = "inventory:1.0-SNAPSHOT";
     // end::appImageName[]
 
     // tag::SystemResourceClient[]
@@ -53,43 +52,44 @@ public class SystemResourceIT {
     public static Network network = Network.newNetwork();
     // end::network[]
 
+    // tag::postgresSetup[]
+    // tag::container-annotation1[]
     @Container
+    // end::container-annotation1[]
     public static GenericContainer<?> postgresContainer
         = new GenericContainer<>(postgresImageName)
+              // tag::pNetwork[]
               .withNetwork(network)
+              // end::pNetwork[]
               .withExposedPorts(5432)
               .withNetworkAliases(postgresHost)
               .withLogConsumer(new Slf4jLogConsumer(logger));
+    // end::postgresSetup[]
 
-    // tag::libertyContainer[]
-    // tag::container-annotation[]
+    // tag::libertySetup[]
+    // tag::container-annotation2[]
     @Container
-    // end::container-annotation[]
+    // end::container-annotation2[]
     public static LibertyContainer libertyContainer
         = new LibertyContainer(appImageName)
               .withEnv("POSTGRES_HOSTNAME", postgresHost)
               // tag::lNetwork[]
               .withNetwork(network)
               // end::lNetwork[]
-              // tag::waitingFor[]
+              // tag::health[]
               .waitingFor(Wait.forHttp(appPath + "/systems")
                               .forPort(9080))
-              // end::waitingFor[]
-              // tag::withLogConsumer[]
+              // end::health[]
               .withLogConsumer(new Slf4jLogConsumer(logger));
-              // end::withLogConsumer[]
-    // end::libertyContainer[]
+    // end::libertySetup[]
 
-    // tag::setupTestClass[]
     @BeforeAll
     public static void setupTestClass() throws Exception {
         System.out.println("TEST: Starting Liberty Container setup");
         client = libertyContainer.createRestClient(
             SystemResourceClient.class, appPath);
     }
-    // end::setupTestClass[]
 
-    // tag::showSystemData[]
     private void showSystemData(SystemData system) {
         System.out.println("TEST: SystemData > "
             + system.getId() + ", "
@@ -98,9 +98,7 @@ public class SystemResourceIT {
             + system.getJavaVersion() + ", "
             + system.getHeapSize());
     }
-    // end::showSystemData[]
 
-    // tag::testcases[]
     // tag::testAddSystem[]
     @Test
     @Order(1)
@@ -148,5 +146,4 @@ public class SystemResourceIT {
         assertEquals(0, systems.size());
     }
     // end::testRemoveSystem[]
-    // end::testcases[]
 }

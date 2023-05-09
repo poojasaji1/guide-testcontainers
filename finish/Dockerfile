@@ -1,8 +1,11 @@
+# tag::from[]
 FROM icr.io/appcafe/open-liberty:full-java11-openj9-ubi
+# end::from[]
 
 ARG VERSION=1.0
 ARG REVISION=SNAPSHOT
 
+# tag::label[]
 LABEL \
   org.opencontainers.image.authors="Your Name" \
   org.opencontainers.image.vendor="Open Liberty" \
@@ -15,8 +18,22 @@ LABEL \
   version="$VERSION-$REVISION" \
   summary="The inventory microservice from the Testcontainers guide" \
   description="This image contains the inventory microservice running with the Open Liberty runtime."
+# end::label[]
 
-COPY --chown=1001:0 src/main/liberty/config/ /config/
-COPY --chown=1001:0 target/*.war /config/apps/
+USER root
+
+COPY --chown=1001:0 \
+    src/main/liberty/config/ \
+    /config/
+
+COPY --chown=1001:0 \
+    target/inventory.war \
+    /config/apps
+
+COPY --chown=1001:0 \
+    target/liberty/wlp/usr/shared/resources/*.jar \
+    /opt/ol/wlp/usr/shared/resources/
+
+USER 1001
 
 RUN configure.sh

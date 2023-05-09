@@ -19,7 +19,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 @ApplicationScoped
-// tag::Inventory[]
+// tag::InventoryDao[]
 public class Inventory {
 
     // tag::PersistenceContext[]
@@ -27,14 +27,14 @@ public class Inventory {
     // end::PersistenceContext[]
     private EntityManager em;
 
-    // tag::getSystems[]
+    // tag::readAllFromInventory[]
     public List<SystemData> getSystems() {
         return em.createNamedQuery("SystemData.findAll", SystemData.class)
                  .getResultList();
     }
-    // end::getSystems[]
+    // end::readAllFromInventory[]
 
-    // tag::getSystem[]
+    // tag::readInventory[]
     public SystemData getSystem(String hostname) {
         // tag::find[]
         List<SystemData> systems =
@@ -44,15 +44,15 @@ public class Inventory {
         return systems == null || systems.isEmpty() ? null : systems.get(0);
         // end::find[]
     }
-    // end::getSystem[]
+    // end::readInventory[]
 
-    // tag::add[]
+    // tag::addToInventory[]
     public void add(String hostname, String osName, String javaVersion, Long heapSize) {
         // tag::Persist[]
         em.persist(new SystemData(hostname, osName, javaVersion, heapSize));
         // end::Persist[]
     }
-    // end::add[]
+    // end::addToInventory[]
 
     // tag::update[]
     public void update(SystemData s) {
@@ -71,4 +71,4 @@ public class Inventory {
     // end::removeSystem[]
 
 }
-// end::Inventory[]
+// end::InventoryDao[]

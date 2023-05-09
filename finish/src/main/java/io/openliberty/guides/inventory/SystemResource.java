@@ -31,13 +31,10 @@ import jakarta.ws.rs.core.Response;
 
 @ApplicationScoped
 @Path("/systems")
-// tag::SystemResource[]
 public class SystemResource {
 
-    // tag::inventory[]
     @Inject
     Inventory inventory;
-    // end::inventory[]
 
     @GET
     @Path("/")
@@ -54,12 +51,10 @@ public class SystemResource {
         return inventory.getSystem(hostname);
     }
 
-    // tag::postTransactional[]
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    // end::postTransactional[]
     public Response addSystem(
         @QueryParam("hostname") String hostname,
         @QueryParam("osName") String osName,
@@ -74,13 +69,11 @@ public class SystemResource {
         return success(hostname + " was added.");
     }
 
-    // tag::putTransactional[]
     @PUT
     @Path("/{hostname}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    // end::putTransactional[]
     public Response updateSystem(
         @PathParam("hostname") String hostname,
         @QueryParam("osName") String osName,
@@ -98,12 +91,10 @@ public class SystemResource {
         return success(hostname + " was updated.");
     }
 
-    // tag::deleteTransactional[]
     @DELETE
     @Path("/{hostname}")
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    // end::deleteTransactional[]
     public Response removeSystem(@PathParam("hostname") String hostname) {
         SystemData s = inventory.getSystem(hostname);
         if (s != null) {
@@ -124,4 +115,3 @@ public class SystemResource {
                        .build();
     }
 }
-// end::SystemResource[]

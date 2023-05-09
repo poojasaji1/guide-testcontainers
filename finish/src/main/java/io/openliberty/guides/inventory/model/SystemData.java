@@ -22,11 +22,18 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
+// tag::Entity[]
 @Entity
+// end::Entity[]
+// tag::Table[]
 @Table(name = "SystemData")
+// end::Table[]
+// tag::NamedQuery[]
 @NamedQuery(name = "SystemData.findAll", query = "SELECT e FROM SystemData e")
 @NamedQuery(name = "SystemData.findSystem",
-            query = "SELECT e FROM SystemData e WHERE e.hostname = :hostname")
+    query = "SELECT e FROM SystemData e WHERE e.hostname = :hostname")
+// end::NamedQuery[]
+// tag::SystemData[]
 public class SystemData implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -40,7 +47,6 @@ public class SystemData implements Serializable {
 
     @Column(name = "hostname")
     private String hostname;
-
     @Column(name = "osName")
     private String osName;
     @Column(name = "javaVersion")
@@ -111,3 +117,4 @@ public class SystemData implements Serializable {
         return false;
     }
 }
+// end::SystemData[]
