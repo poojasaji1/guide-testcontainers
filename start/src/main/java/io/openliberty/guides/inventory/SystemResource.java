@@ -9,13 +9,14 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 // end::copyright[]
-package io.openliberty.guides.rest;
+package io.openliberty.guides.inventory;
 
 import java.util.List;
 
-import io.openliberty.guides.rest.model.SystemData;
+import io.openliberty.guides.inventory.model.SystemData;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -29,41 +30,31 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 @ApplicationScoped
-//tag::path[]
 @Path("/systems")
-//end::path[]
 public class SystemResource {
 
     @Inject
     Inventory inventory;
 
-    //tag::getListContents[]
     @GET
-    //end::getListContents[]
     @Path("/")
-    //tag::producesListContents[]
     @Produces(MediaType.APPLICATION_JSON)
-    //end::producesListContents[]
     public List<SystemData> listContents() {
-        //tag::getSystems[]
         return inventory.getSystems();
-        //end::getSystems[]
     }
 
-    //tag::getGetSystem[]
     @GET
-    //end::getGetSystem[]
     @Path("/{hostname}")
-    //tag::producesGetSystem[]
     @Produces(MediaType.APPLICATION_JSON)
-    //end::producesGetSystem[]
-    public SystemData getSystem(@PathParam("hostname") String hostname) {
+    public SystemData getSystem(
+        @PathParam("hostname") String hostname) {
         return inventory.getSystem(hostname);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response addSystem(
         @QueryParam("hostname") String hostname,
         @QueryParam("osName") String osName,
@@ -82,6 +73,7 @@ public class SystemResource {
     @Path("/{hostname}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response updateSystem(
         @PathParam("hostname") String hostname,
         @QueryParam("osName") String osName,
@@ -102,6 +94,7 @@ public class SystemResource {
     @DELETE
     @Path("/{hostname}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response removeSystem(@PathParam("hostname") String hostname) {
         SystemData s = inventory.getSystem(hostname);
         if (s != null) {

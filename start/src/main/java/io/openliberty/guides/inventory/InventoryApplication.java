@@ -9,13 +9,11 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 // end::copyright[]
-package io.openliberty.guides.rest;
+package io.openliberty.guides.inventory;
 
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 
-//tag::applicationPath[]
 @ApplicationPath("/api")
-//end::applicationPath[]
 public class InventoryApplication extends Application {
 }

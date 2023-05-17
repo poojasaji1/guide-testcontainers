@@ -9,15 +9,50 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 // end::copyright[]
-package io.openliberty.guides.rest.model;
+package io.openliberty.guides.inventory.model;
 
-public class SystemData {
+import java.io.Serializable;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+
+// tag::Entity[]
+@Entity
+// end::Entity[]
+// tag::Table[]
+@Table(name = "SystemData")
+// end::Table[]
+// tag::NamedQuery[]
+@NamedQuery(name = "SystemData.findAll", query = "SELECT e FROM SystemData e")
+@NamedQuery(name = "SystemData.findSystem",
+    query = "SELECT e FROM SystemData e WHERE e.hostname = :hostname")
+// end::NamedQuery[]
+// tag::SystemData[]
+public class SystemData implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    @SequenceGenerator(name = "SEQ",
+                       sequenceName = "systemData_id_seq",
+                       allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY, generator = "SEQ")
+    @Id
+    @Column(name = "id")
     private int id;
+
+    @Column(name = "hostname")
     private String hostname;
+    @Column(name = "osName")
     private String osName;
+    @Column(name = "javaVersion")
     private String javaVersion;
-    private Long   heapSize;
+    @Column(name = "heapSize")
+    private Long heapSize;
 
     public SystemData() {
     }
@@ -70,10 +105,16 @@ public class SystemData {
     }
 
     @Override
+    public int hashCode() {
+        return hostname.hashCode();
+    }
+
+    @Override
     public boolean equals(Object host) {
-      if (host instanceof SystemData) {
-        return hostname.equals(((SystemData) host).getHostname());
-      }
-      return false;
+        if (host instanceof SystemData) {
+            return hostname.equals(((SystemData) host).getHostname());
+        }
+        return false;
     }
 }
+// end::SystemData[]
