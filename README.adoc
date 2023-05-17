@@ -10,31 +10,39 @@
 :page-layout: guide-multipane
 :page-duration: 20 minutes
 :page-releasedate: 2023-01-31
-:page-description: Learn how to use Testcontainers to test a MicroProfile or Jakarta EE application.
-:page-tags: ['MicroProfile', 'Jakarta EE', 'Docker']
+:page-guide-category: microprofile
+:page-essential: false
+:page-description: Learn how to test your microservices with multiple containers using Testcontainers and JUnit.
+:page-seo-title: Testing Java microservices using Testcontainers and JUnit with multiple containers and OpenLiberty Docker container
+:page-seo-description: A getting started tutorial on how to develop true-to-production integration tests for Java microservices in production-like settings by using Testcontainers and JUnit with multiple containers and Open Liberty Docker container.
+:guide-author: Open Liberty
+:page-tags: ['MicroProfile', 'Jakarta EE']
+:page-related-guides: ['microshed-testing', 'reactive-service-testing', 'arquillian-managed']
 :page-permalink: /guides/{projectid}
-:page-related-guides: ['rest-intro', 'docker', 'rest-client-java']
+:repo-description: Visit the https://openliberty.io/guides/{projectid}.html[website] for the rendered version of the guide.
 :common-includes: https://raw.githubusercontent.com/OpenLiberty/guides-common/prod
 :source-highlighter: prettify
-:page-seo-title: Testing a MicroProfile or Jakarta EE application using Testcontainers with an Open Liberty Docker container
-:page-seo-description: A tutorial on how to develop tests for a MicroProfile microservice or a Jakarta EE application in production-like settings by using Testcontainers with an Open Liberty Docker container.
-:guide-author: Open Liberty
-= Testing a MicroProfile or Jakarta EE application with Testcontainers
+:imagesdir: /img/guide/{projectid}
+= Building true-to-production integration tests with Testcontainers
 
 [.hidden]
 NOTE: This repository contains the guide documentation source. To view the guide in published form, view it on the https://openliberty.io/guides/{projectid}.html[Open Liberty website].
 
-Learn how to test a MicroProfile or Jakarta EE application in true-to-production environments using Testcontainers.
+Learn how to test your microservices with multiple containers using Testcontainers and JUnit.
 
 == What you'll learn
 
-You'll learn how to write integration tests for a MicroProfile microservice or a Jakarta EE application and run them in production-like settings by using https://www.testcontainers.org/[Testcontainers^]. 
+You'll learn how to write true-to-production integration tests for Java microservices by using https://www.testcontainers.org/[Testcontainers^] and JUnit. You'll learn to set up and configure multiple containers, including the Open Liberty Docker container, to simulate a production-like environment for your tests.
 
-Sometimes tests might pass in development and testing (dev/test) environments, but fail in production because the application runs differently in production than in dev/test. By testing your containerized application from outside the container, you can ensure that the exact same image running in production is tested, minimizing the differences between dev/test and production environments.
+Sometimes tests might pass in development and testing (dev/test) environments, but fail in production because the application runs differently in production than in dev/test. Fortunately, you can minimize these differences between dev/test and production by testing your application in the same Docker container that you'll use in production.
 
 === What is Testcontainers?
 
 Testcontainers is an open source library that wraps Docker in a Java API and offers seamless integration with JUnit. It is useful for testing applications with external resource dependencies such as databases, message queues, or web services. One of its most crucial features is the generic support for any Docker image, allowing you to leverage the consistency and portability of Docker containers for testing.
+
+The microservice that you'll be working with is called `inventory`. The `inventory` microservice persists data into a PostgreSQL database and supports create, retrieve, update, and delete (CRUD) operations on the database records. You will write integration tests for the application by using Testcontainers to run it in Docker containers.
+
+image::inventory.png[Inventory microservice,align="center"]
 
 // =================================================================================================
 // Additional prerequisites
@@ -56,13 +64,21 @@ include::{common-includes}/gitclone.adoc[]
 // =================================================================================================
 === Try what you'll build
 
+This guide use Docker to run an instance of the PostgreSQL database for a fast installation and setup. A Dockerfile file is provided for you. Navigate to the `postgres` directory and run the following commands to use the Dockerfile to build the image:
+
+[role='command']
+```
+cd postgres
+docker build -t postgres-sample .
+```
+
 The `finish` directory in the root of this guide contains the finished application. Give it a try before you proceed.
 
 To try out the test, first go to the `finish` directory and run the `mvn package` command so that the `.war` file resides in the `target` directory:
 
 [role='command']
 ```
-cd finish
+cd ../finish
 mvn package
 ```
 
@@ -77,10 +93,10 @@ Build your Docker image with the following commands:
 
 [role='command']
 ```
-docker build -t testcontainers:1.0-SNAPSHOT .
+docker build -t inventory:1.0-SNAPSHOT .
 ```
 
-Run the following Maven goal to build the application and run the integration tests on an Open Liberty server in a container:
+Now, run the Maven `verify` goal which compiles the java files, starts the containers, runs the tests, and then stops the containers.
 
 [role='command']
 ```
@@ -94,9 +110,9 @@ You will see the following output:
  -------------------------------------------------------
   T E S T S
  -------------------------------------------------------
- Running it.io.openliberty.guides.rest.SystemResourceIT
+ Running it.io.openliberty.guides.inventory.SystemResourceIT
  ...
- Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.891 s - in it.io.openliberty.guides.rest.SystemResourceIT
+ Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.128 s - in it.io.openliberty.guides.inventory.SystemResourceIT
 
  Results:
 
@@ -104,120 +120,134 @@ You will see the following output:
 ----
 
 // =================================================================================================
-// Bootstrapping your application for testing
+// Implementing integration tests
 // =================================================================================================
-== Bootstrapping your application for testing
+== Implementing integration tests
 
 Navigate to the `start` directory to begin.
 
-The `start/src` directory contains a REST application that supports create, retrieve, update, and delete (CRUD) operations on a system inventory. You will write integration tests for the application by using Testcontainers to run it in a Docker container.
+Run the following command to start the PostgreSQL database, which runs the `postgres-sample` image in a Docker container, and map `5432` port from the container to your machine:
+
+[role='command']
+```
+docker run --name postgres-container -p 5432:5432 -d postgres-sample
+```
+
+include::{common-includes}/devmode-lmp33-start.adoc[]
+
+=== Building the test REST client
+
+Test REST client is responsible for sending HTTP requests to an application and handling the responses. It enables accurate verification of the application's behavior by ensuring it responds correctly to various scenarios and conditions.
+
+Begin by creating a RESTful client interface for the `inventory` microservice:
+
+[role="code_command hotspot file=0" ,subs="quotes"]
+----
+#Create the `SystemResourceClient.java` file.#
+`src/test/java/it/io/openliberty/guides/inventory/SystemResourceClient.java`
+----
 
 // file 0
-pom.xml
-[source, XML, linenums, role='code_column']
+SystemResourceClient.java
+[source, java, linenums, role="code_column hide_tags=copyright"]
 ----
-include::finish/pom.xml[]
-----
-
-The necessary test dependencies, including [hotspot=testcontainers file=0]`testcontainers` and Testcontainers' [hotspot=testcontainers-junit file=0]`junit-jupiter` extension, have already been added to the `pom.xml` Maven configuration file for you. The [hotspot=testcontainers file=0]`testcontainers` dependency offers a general-purpose API for managing container-based test environments. The Testcontainers [hotspot=testcontainers-junit file=0]`junit-jupiter` extension dependency provides integration with the JUnit5 testing framework. 
-
-To run integration tests in a production-like environment, you first need to deploy the test application to a container.
-
-Run the `mvn package` command so that the `.war` file resides in the `target` directory:
-
-[role='command']
-```
-mvn package
-```
-
-If you don't have the latest Docker image, pull it by running the following command:
-
-[role='command']
-```
-docker pull icr.io/appcafe/open-liberty:full-java11-openj9-ubi
-```
-
-Dockerfile has already been set up for you. Build your Docker image with the following commands:
-
-[role='command']
-```
-docker build -t testcontainers:1.0-SNAPSHOT .
-```
-
-To verify that the images are built, run the `docker images` command to list all local Docker images:
-
-[role='command']
-```
-docker images
-```
-
-Your `testcontainers` image appears in the list of Docker images:
-
-[role="no_copy"]
-----
-REPOSITORY        TAG             IMAGE ID        CREATED           SIZE
-testcontainers    1.0-SNAPSHOT    5b67ed3a559b    27 seconds ago    1.03GB
+include::finish/src/test/java/it/io/openliberty/guides/inventory/SystemResourceClient.java[]
 ----
 
-Next, create the test container class that accesses and configures a Liberty container.
+The [hotspot file=0]`SystemResourceClient` interface declares the [hotspot=listContents file=0]`listContents()`, [hotspot=getSystem file=0]`getSystem()`, [hotspot=addSystem file=0]`addSystem()`, [hotspot=updateSystem file=0]`updateSystem()`, and [hotspot=removeSystem file=0]`removeSystem()` methods for accessing the corresponding endpoints within the `inventory` microservice.
+
+Next, create the `SystemData` data model, which represents each system in the `inventory` by holding the ID, hostname, operating system name, Java version, and heap size properties.
 
 [role="code_command hotspot file=1" ,subs="quotes"]
 ----
-#Create the `LibertyContainer.java` file.#
-`src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java`
+#Create the `SystemData.java` file.#
+`src/test/java/it/io/openliberty/guides/inventory/SystemData.java`
 ----
 
 // file 1
-LibertyContainer.java
-[source, java, linenums, role="code_column hide_tags=copyright,createRestClient,getBaseURL"]
+SystemData.java
+[source, java, linenums, role="code_column hide_tags=copyright"]
 ----
-include::finish/src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java[]
+include::finish/src/test/java/it/io/openliberty/guides/inventory/SystemData.java[]
 ----
 
-The [hotspot=LibertyContainer file=1]`LibertyContainer` class extends the [hotspot=GenericContainer file=1]`GenericContainer` from the [hotspot=testcontainers file=0]`testcontainers` library to create a custom container for the Liberty server. 
+The [hotspot file=1]`SystemData` class encapsulates system properties and provides various [hotspot=getMethods file=1]get and [hotspot=setMethods file=1]set methods for accessing and modifying these properties.
 
-The [hotspot=getProtocol file=1]`getProtocol()` and [hotspot=testHttps file=1]`testHttps()` methods are used to determine whether to run tests using HTTPS. 
+=== Building test cases
 
-The [hotspot=constructor file=1]`LibertyContainer` class constructor accepts a Docker image to use for the container, sets up a wait strategy to ensure the Liberty server starts before running the tests, and initializes the container environment with the [hotspot=init file=1]`init()` method.
+Now you can start writing the test that uses the `SystemResourceClient` test REST client.
 
-The [hotspot=addExposedPorts1 hotspot=addExposedPorts2 file=1]`addExposedPorts(port)` method exposes specified ports from the container's perspective, allowing test clients to communicate with services running inside the container. To prevent port conflicts, Testcontainers assigns random host ports to these exposed container ports. When HTTPS is enabled, the [hotspot=key-p12 file=1]`key.p12` keystore file loads, and a custom SSL context is created with a trust manager to trust all certificates for testing.
-
-The `SystemResourceIT` class outlines some basic information that informs how Testcontainers starts the application runtime and at which URL path the application is available:
-
-[role="code_command hotspot file=2" ,subs="quotes"]
+[role="code_command hotspot file=0" ,subs="quotes"]
 ----
 #Create the `SystemResourceIT.java` file.#
-`src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java`
+`src/test/java/it/io/openliberty/guides/inventory/SystemResourceIT.java`
 ----
-
-// file 2
-SystemResourceIT.java
-[source, java, linenums, role="code_column hide_tags=copyright,SystemResourceClient,setupTestClass,showSystemData,testcases"]
-----
-include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
-----
-
-Annotate the `SystemResourceIT` class with the [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation and initialize a [hotspot=libertyContainer file=2]`LibertyContainer` instance to access the `testcontainers` Docker image with the [hotspot=container-annotation file=2]`@Container` annotation.
-
-The [hotspot=testcontainers-annotation file=2]`@Testcontainers` annotation enables Testcontainers support for the class. The [hotspot=container-annotation file=2]`@Container` annotation marks the `libertyContainer` as a container instance in the class, which allows Testcontainers to manage the container's lifecycle automatically. The `@Testcontainers` annotation automatically starts and stops all fields or properties that are marked with `@Container` during test class execution, ensuring proper setup and cleanup for tests.
-
-The [hotspot=waitingFor file=2]`waitingFor(Wait.forHttp(String).forPort(port))` method configures a custom readiness check for Testcontainers. It ensures that the application server is fully initialized and returns an HTTP 200 status code at the specified endpoint and port before allowing any tests to run. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^] for full details.
-
-// =================================================================================================
-// Enabling trace logging
-// =================================================================================================
-== Enabling trace logging
 
 // file 0
-pom.xml
-[source, XML, linenums, role='code_column']
+SystemResourceIT.java
+[source, java, linenums, role="code_column hide_tags=copyright"]
 ----
-include::finish/pom.xml[]
+include::finish/src/test/java/it/io/openliberty/guides/inventory/SystemResourceIT.java[]
 ----
 
-Having reliable logs is essential in software development and testing, as they provide valuable insights into the application's behavior, making it easier to identify and resolve issues during test failures. Testcontainers' built-in `Slf4jLogConsumer` enables seamless integration of container output with the JUnit process, streamlining log analysis and simplifying test creation and debugging.
+The [hotspot=testAddSystem file=0]`testAddSystem()` verifies the [hotspot=addSystem file=0]`addSystem` and [hotspot=listContents file=0]`listContents` endpoints.
 
-To use `Slf4jLogConsumer`, the necessary [hotspot=slf4j-log4j12 file=0]`slf4j-reload4j` dependency is already included in the Maven `pom.xml` file for you.
+The [hotspot=testUpdateSystem file=0]`testUpdateSystem()` verifies the [hotspot=updateSystem file=0]`updateSystem` and [hotspot=getSystem file=0]`getSystem` endpoints.
+
+The [hotspot=testRemoveSystem file=0]`testRemoveSystem()` verifies the [hotspot=removeSystem file=0]`removeSystem` endpoint.
+
+Because you started Open Liberty in dev mode, you can run the tests by pressing the `enter/return` key from the command-line session where you started dev mode.
+
+You will see the following output:
+
+[role="no_copy"]
+----
+ -------------------------------------------------------
+  T E S T S
+ -------------------------------------------------------
+ Running it.io.openliberty.guides.inventory.SystemResourceIT
+ ...
+ Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.128 s - in it.io.openliberty.guides.inventory.SystemResourceIT
+
+ Results:
+
+ Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+----
+
+// =================================================================================================
+// Enhancing integration tests to use Testcontainers
+// =================================================================================================
+== Enhancing integration tests to use Testcontainers
+
+In this section, you will learn how to improve your integration tests by incorporating Testcontainers. This offers a more realistic, production-like environment for testing your application.
+
+=== Building Testcontainer for Open Liberty
+
+You'll start by defining a custom `LibertyContainer` class which provides a framework to start and access a containerized version of the Open Liberty application for testing.
+
+
+Next, create the test container class that accesses and configures a Liberty container.
+
+[role="code_command hotspot file=0" ,subs="quotes"]
+----
+#Create the `LibertyContainer.java` file.#
+`src/test/java/it/io/openliberty/guides/inventory/LibertyContainer.java`
+----
+
+// file 0
+LibertyContainer.java
+[source, java, linenums, role="code_column hide_tags=copyright"]
+----
+include::finish/src/test/java/it/io/openliberty/guides/inventory/LibertyContainer.java[]
+----
+
+The [hotspot=LibertyContainer file=0]`LibertyContainer` class extends the [hotspot=GenericContainer file=0]`GenericContainer` class from Testcontainers to create a custom container configuration specific to the Open Liberty application. The `GenericContainer` class provides a flexible API for configuring and launching arbitrary Docker containers, and your `LibertyContainer` subclass tailors this functionality to suit the specific needs of your application.
+
+The [hotspot=addExposedPorts1 hotspot=addExposedPorts2 file=1]`addExposedPorts(port)` method exposes specified ports from the container's perspective, allowing test clients to communicate with services running inside the container. To prevent port conflicts, Testcontainers assigns random host ports to these exposed container ports. 
+
+The `waitingFor()` method directs TestContainers to wait for a specific log message (`CWWKF0011I`) that indicates the Liberty server has started successfully.
+
+Once the `LibertyContainer` is configured, you can now focus on setting up a logging system for your tests. Having reliable logs is essential for efficient debugging, as they provide detailed insights into the test execution flow, making it easier to identify and resolve issues during test failures. Testcontainers' built-in `Slf4jLogConsumer` enables integration of container output with the JUnit process, streamlining log analysis and simplifying test creation and debugging.
 
 Create the log4j properties to configure the logging behavior in your tests.
 
@@ -238,105 +268,42 @@ The [hotspot file=1]`log4j.properties` file sets up the root logger, appenders, 
 
 By setting the log level to `DEBUG`, you can obtain more detailed logging information for the specified package, which can be helpful for debugging and understanding test behavior. For more information about log4j properties and configuration, see the https://logging.apache.org/log4j/1.2/manual.html[Log4j 1.2 official documentation^].
 
-// file 2
-LibertyContainer.java
-[source, java, linenums, role="code_column hide_tags=copyright,createRestClient,getBaseURL"]
-----
-include::finish/src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java[]
-----
+=== Starting Testcontainers
 
-// file 3
-SystemResourceIT.java
-[source, java, linenums, role="code_column hide_tags=copyright,SystemResourceClient,setupTestClass,showSystemData,testcases"]
-----
-include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
-----
-
-Note that logger instances have already been created in both [hotspot=logger file=2]`LibertyContainer.java` and [hotspot=logger file=3]`SystemResource.java` files by using the `LoggerFactory.getLogger()` method. To integrate container logs with the logger instance, Testcontainers provides the [hotspot=withLogConsumer file=3]`withLogConsumer(new Slf4jLogConsumer(Logger))` method, which pipes the container output to the specified logger.
-
-// =================================================================================================
-// Talking to your application with a REST client
-// =================================================================================================
-== Talking to your application with a REST client
-
-At this stage, your application can be easily started in a container as part of the test lifecycle. The next step involves implementing a RESTful client interface to efficiently send HTTP test requests. 
-
-First, create a RESTful client interface for the application.
-
-[role="code_command hotspot file=0" ,subs="quotes"]
-----
-#Create the `SystemResourceClient.java` file.#
-`src/test/java/it/io/openliberty/guides/rest/SystemResourceClient.java`
-----
-
-// file 0
-SystemResourceClient.java
-[source, java, linenums, role="code_column hide_tags=copyright"]
-----
-include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceClient.java[]
-----
-
-The `SystemResourceClient` RESTful client interface declares [hotspot=listContents file=0]`listContents()`, [hotspot=getSystem file=0]`getSystem()`, [hotspot=addSystem file=0]`addSystem()`, [hotspot=updateSystem file=0]`updateSystem()`, and [hotspot=removeSystem file=0]`removeSystem()` methods for accessing each of the endpoints that are set up to access the REST application.
-
-Next, create a REST client instance with the `SystemResourceClient` interface and construct the URL that can access the `testcontainers` Docker image.
-
-[role="code_command hotspot file=1" ,subs="quotes"]
-----
-#Replace the `LibertyContainer.java` file.#
-`src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java`
-----
-
-// file 1
-LibertyContainer.java
-[source, java, linenums, role="code_column hide_tags=copyright"]
-----
-include::finish/src/test/java/it/io/openliberty/guides/rest/LibertyContainer.java[]
-----
-
-The [hotspot=createRestClient file=1]`createRestClient()` method generates a REST client instance by using the provided class and application path. The [hotspot=getBaseURL file=1]`getBaseURL()` method constructs the URL for accessing the Docker image that is specified in the class constructor.
-
-[role="code_command hotspot file=2" ,subs="quotes"]
-----
-#Replace the `SystemResourceIT.java` file.#
-`src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java`
-----
-
-// file 2
-SystemResourceIT.java
-[source, java, linenums, role="code_column hide_tags=copyright,showSystemData,testcases"]
-----
-include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
-----
-
-The [hotspot=setupTestClass file=2]`setupTestClass()` method initializes a [hotspot=SystemResourceClient file=2]`SystemResourceClient` REST client by invoking the [hotspot=createRestClient file=1]`LibertyContainer.createRestClient()` method with the `SystemResourceClient` interface. During this process, the [hotspot=getBaseURL file=1]`LibertyContainer.getBaseURL()` method is called to construct the URL for accessing the [hotspot=appImageName file=2]`testcontainers` Docker image.
-
-// =================================================================================================
-// Testing your container
-// =================================================================================================
-== Testing your container
-
-Now that the setup is complete, you can write your integration test cases. To test your application, use the initialized `SystemResourceClient` REST client to make HTTP POST requests and read the responses.
+The next step is to integrate Testcontainers into your tests.
 
 [role="code_command hotspot file=0" ,subs="quotes"]
 ----
 #Replace the `SystemResourceIT.java` file.#
-`src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java`
+`src/test/java/it/io/openliberty/guides/inventory/SystemResourceIT.java`
 ----
 
 // file 0
 SystemResourceIT.java
 [source, java, linenums, role="code_column hide_tags=copyright"]
 ----
-include::finish/src/test/java/it/io/openliberty/guides/rest/SystemResourceIT.java[]
+include::finish/src/test/java/it/io/openliberty/guides/inventory/SystemResourceIT.java[]
 ----
 
-The [hotspot=testAddSystem file=0]`testAddSystem()` verifies the [hotspot=addSystem file=0]`addSystem` and [hotspot=listContents file=0]`listContents` endpoints.
+Define the `postgresContainer` test container to start up the PostgreSQL docker image, and define the `inventoryContainer` test container to start up the inventory docker image. 
 
-The [hotspot=testUpdateSystem file=0]`testUpdateSystem()` verifies the [hotspot=updateSystem file=0]`updateSystem` and [hotspot=getSystem file=0]`getSystem` endpoints.
+By default, each container gets an isolated network. If our containers need to communicate with each other we can enlist them in a Testcontainer Network to establish communication between the two or more containers.
 
-The [hotspot=testRemoveSystem file=0]`testRemoveSystem()` verifies the [hotspot=removeSystem file=0]`removeSystem` endpoint.
+The [hotspot=waitingFor file=2]`waitingFor()` method configures a custom readiness check for Testcontainers. It ensures that the application server is fully initialized and returns an HTTP 200 status code at the specified endpoint and port before allowing any tests to run. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^] for full details.
 
-=== Running the tests
+Note that logger instances have already been created in both LibertyContainer.java and SystemResource.java files by using the LoggerFactory.getLogger() method. To integrate container logs with the logger instance, Testcontainers provides the withLogConsumer(new Slf4jLogConsumer(Logger)) method, which pipes the container output to the specified logger.
+
+Update the `setup()` method to conditionally start the Testcontainers when running the tests and add the `tearDown()` method to stop the containers and close the network after running all tests.
+
+=== Configuring Maven project
+
+Now, configure your test build with Maven. 
+
+[role="code_command hotspot file=0" ,subs="quotes"]
+----
+#Replace the `pom.xml` file.#
+`pom.xml`
+----
 
 // file 0
 pom.xml
@@ -345,9 +312,44 @@ pom.xml
 include::finish/pom.xml[]
 ----
 
-The [hotspot=failsafe file=0]`maven-failsafe-plugin` has already been included in your Maven `pom.xml` file to enable integration tests to be run by using the Maven `verify` goal.
+Add the required `dependency` for Testcontainers and Log4J libraries with `test` scope. The [hotspot=testcontainers file=0]`testcontainers` dependency offers a general-purpose API for managing container-based test environments. The [hotspot=slf4j-log4j12 file=0]`slf4j-reload4j` dependency enables the Simple Logging Facade for Java (SLF4J) API for logging during test execution abd facilitates debugging and test performance tracking. 
 
-Run the Maven `verify` goal, which compiles the java files, starts the containers, runs the tests, and then stops the containers:
+Also, add the `maven-failsafe-plugin` plugin, so that the integration test can be run by the Maven `verify` goal.
+
+Save the changes, and press the `enter/return` key in your console window to run the tests. You can see the tests still passed in dev mode or local runtime.
+
+// =================================================================================================
+// Testing outside of development mode
+// =================================================================================================
+== Testing outside of development mode
+
+Running tests in development mode is useful for local development, but there may be times when you want to test your application in other scenarios, such as in a CI/CD pipeline. For these cases, you can use Testcontainers to run tests against a running Open Liberty server in a controlled, self-contained environment, ensuring your tests run consistently regardless of the deployment context.
+
+To test outside of development mode, exit dev mode by pressing `CTRL+C` in the command-line session where you ran the server, or by typing `q` and then pressing the `enter/return` key.
+
+Also, run the following commands to stop the PostgreSQL container that was started in the previous section:
+
+[role='command']
+```
+docker stop postgres-container
+docker rm postgres-container
+```
+
+Rebuild the application using `mvn package`.
+
+[role='command']
+```
+mvn package
+```
+
+Run the docker build command to rebuild container image for your application:
+
+[role='command']
+```
+docker build -t inventory:1.0-SNAPSHOT .
+```
+
+Now, use the following Maven goal to run the tests from a cold start outside of development mode:
 
 [role='command']
 ```
@@ -358,17 +360,19 @@ You will see the following output:
 
 [role="no_copy"]
 ----
--------------------------------------------------------
- T E S T S
--------------------------------------------------------
-Running it.io.openliberty.guides.rest.SystemResourceIT
-...
-Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.231 s - in it.io.openliberty.guides.rest.SystemResourceIT
+ -------------------------------------------------------
+  T E S T S
+ -------------------------------------------------------
+ Running it.io.openliberty.guides.inventory.SystemResourceIT
+ ...
+ Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 30.425 s - in it.io.openliberty.guides.inventory.SystemResourceIT
 
-Results :
+ Results:
 
-Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+ Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
 ----
+
+Notice that the test initiates a new Docker container each for the PostgreSQL database and the application, resulting in a longer test runtime. Despite this, cold start testing benefits from a clean instance per run, ensuring consistent results. These tests also automatically hook into existing build pipelines that are set up to run the `integration-test` phase.
 
 // =================================================================================================
 // Great work! You're done!
