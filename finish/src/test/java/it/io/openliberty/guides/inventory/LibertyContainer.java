@@ -14,19 +14,27 @@ package it.io.openliberty.guides.inventory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
+// tag::GenericContainer[]
 public class LibertyContainer extends GenericContainer<LibertyContainer> {
+// end::GenericContainer[]
 
     public LibertyContainer(
     	String imageName, boolean testHttps, int httpsPort, int httpPort) {
         
     	super(imageName);
         if (testHttps) {
+            // tag::addExposedPorts1[]
             addExposedPorts(httpsPort, httpPort);
+            // end::addExposedPorts1[]
         } else {
+            // tag::addExposedPorts2[]
             addExposedPorts(httpPort);
+            // end::addExposedPorts2[]
         }
         // wait for smarter planet message by default
+        // tag::waitingFor[]
         waitingFor(Wait.forLogMessage("^.*CWWKF0011I.*$", 1));
+        // end::waitingFor[]
 
     }
 

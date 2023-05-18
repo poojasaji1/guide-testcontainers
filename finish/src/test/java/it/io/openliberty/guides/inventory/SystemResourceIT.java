@@ -43,7 +43,9 @@ import jakarta.ws.rs.core.UriBuilder;
 @TestMethodOrder(OrderAnnotation.class)
 public class SystemResourceIT {
 
+    // tag::getLogger[]
     private static Logger logger = LoggerFactory.getLogger(SystemResourceIT.class);
+    // end::getLogger[]
     
     private static int HTTP_PORT = Integer.parseInt(System.getProperty("http.port"));
     private static int HTTPS_PORT = Integer.parseInt(System.getProperty("https.port"));
@@ -55,21 +57,37 @@ public class SystemResourceIT {
     private static String POSTGRES_IMAGE = "postgres-sample:latest";
 
     private static SystemResourceClient client;
+    // tag::network1[]
     private static Network network = Network.newNetwork();
+    // end::network1[]
 
+    // tag::postgresContainer[]
     private static GenericContainer<?> postgresContainer
         = new GenericContainer<>(POSTGRES_IMAGE)
+              // tag::network2[]
               .withNetwork(network)
+              // end::network2[]
               .withExposedPorts(POSTGRES_PORT)
               .withNetworkAliases(POSTGRES_HOST)
+              // tag::withLogConsumer1[]
               .withLogConsumer(new Slf4jLogConsumer(logger));
+              // end::withLogConsumer1[]
+    // end::postgresContainer[]
 
+    // tag::inventoryContainer[]
     private static LibertyContainer inventoryContainer
         = new LibertyContainer(APP_IMAGE, testHttps(), HTTPS_PORT, HTTP_PORT)
               .withEnv("POSTGRES_HOSTNAME", POSTGRES_HOST)
+              // tag::network3[]
               .withNetwork(network)
+              // end::network3[]
+              // tag::waitingFor[]
               .waitingFor(Wait.forHttp(APP_PATH + "/systems").forPort(HTTP_PORT))
+              // end::waitingFor[]
+              // tag::withLogConsumer2[]
               .withLogConsumer(new Slf4jLogConsumer(logger));
+              // end::withLogConsumer2[]
+    // end::inventoryContainer[]
 
     private static boolean isServiceRunning(String host, int port) {
         try {

@@ -62,6 +62,7 @@ public class SystemResourceIT {
         return getProtocol().equalsIgnoreCase("https");
     }
     
+    // tag::createRestClient[]
     private static SystemResourceClient createRestClient(String urlPath) throws KeyStoreException {
         ClientBuilder builder = ResteasyClientBuilder.newBuilder();
         if (testHttps()) {
@@ -77,7 +78,9 @@ public class SystemResourceIT {
         ResteasyWebTarget target = client.target(UriBuilder.fromPath(urlPath));
         return target.proxy(SystemResourceClient.class);
     }
+    // end::createRestClient[]
 
+    // tag::setup[]
     @BeforeAll
     public static void setup() throws Exception {
         String urlPath;
@@ -92,6 +95,7 @@ public class SystemResourceIT {
         System.out.println("TEST: " + urlPath);
         client = createRestClient(urlPath);
     }
+    // end::setup[]
 
     private void showSystemData(SystemData system) {
         System.out.println("TEST: SystemData > "
