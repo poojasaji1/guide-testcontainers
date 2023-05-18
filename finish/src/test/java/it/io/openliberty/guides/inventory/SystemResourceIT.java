@@ -24,25 +24,52 @@ import javax.net.ssl.SSLSession;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.UriBuilder;
 
 @TestMethodOrder(OrderAnnotation.class)
 public class SystemResourceIT {
+
+    private static Logger logger = LoggerFactory.getLogger(SystemResourceIT.class);
     
     private static int HTTP_PORT = Integer.parseInt(System.getProperty("http.port"));
     private static int HTTPS_PORT = Integer.parseInt(System.getProperty("https.port"));
     private static String APP_PATH = System.getProperty("context.root") + "/api";
+    private static String APP_IMAGE = "inventory:1.0-SNAPSHOT";
 
+    private static String POSTGRES_HOST = "postgres";
     private static int POSTGRES_PORT = 5432;
+    private static String POSTGRES_IMAGE = "postgres-sample:latest";
 
     private static SystemResourceClient client;
+    private static Network network = Network.newNetwork();
+
+    private static GenericContainer<?> postgresContainer
+        = new GenericContainer<>(POSTGRES_IMAGE)
+              .withNetwork(network)
+              .withExposedPorts(POSTGRES_PORT)
+              .withNetworkAliases(POSTGRES_HOST)
+              .withLogConsumer(new Slf4jLogConsumer(logger));
+
+    private static LibertyContainer inventoryContainer
+        = new LibertyContainer(APP_IMAGE, testHttps(), HTTPS_PORT, HTTP_PORT)
+              .withEnv("POSTGRES_HOSTNAME", POSTGRES_HOST)
+              .withNetwork(network)
+              .waitingFor(Wait.forHttp(APP_PATH + "/systems").forPort(HTTP_PORT))
+              .withLogConsumer(new Slf4jLogConsumer(logger));
 
     private static boolean isServiceRunning(String host, int port) {
         try {
@@ -81,16 +108,37 @@ public class SystemResourceIT {
     @BeforeAll
     public static void setup() throws Exception {
         String urlPath;
-        if (isServiceRunning("localhost", POSTGRES_PORT)) {
-            urlPath = getProtocol() + "://localhost:"
-                        + (testHttps() ? HTTPS_PORT : HTTP_PORT);
+        if (isServiceRunning("localhost", HTTP_PORT)) {
+            logger.info("Testing by dev mode or local runtime...");
+            if (isServiceRunning("localhost", POSTGRES_PORT)) {
+                logger.info("The application is ready to test.");
+                urlPath = getProtocol() + "://localhost:"
+                          + (testHttps() ? HTTPS_PORT : HTTP_PORT);
+            } else {
+                throw new Exception(
+                      "Postgres database is not running");
+            }
         } else {
-            throw new Exception(
-                    "Postgres database is not running");
+            logger.info("Testing by using Testcontainers...");
+            if (isServiceRunning("localhost", POSTGRES_PORT)) {
+                throw new Exception(
+                      "Postgres database is running locally. Stop it and retry.");                
+            } else {
+                postgresContainer.start();
+                inventoryContainer.start();
+                urlPath = inventoryContainer.getBaseURL(getProtocol());
+            }
         }
         urlPath += APP_PATH;
         System.out.println("TEST: " + urlPath);
         client = createRestClient(urlPath);
+    }
+
+    @AfterAll
+    public static void tearDown() {
+        inventoryContainer.stop();
+        postgresContainer.stop();
+        network.close();
     }
 
     private void showSystemData(SystemData system) {
