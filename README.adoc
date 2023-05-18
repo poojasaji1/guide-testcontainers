@@ -207,7 +207,7 @@ Because you started Open Liberty in dev mode, you can run the tests by pressing 
 // =================================================================================================
 == Enhancing integration tests to use Testcontainers
 
-Next, you will learn how to use Testcontainers to verify your microservice in the same Docker containers that you'll use in production.
+Next, you will learn how to use Testcontainers to verify your microservices in the same Docker containers that you'll use in production.
 
 === Building Testcontainer for Open Liberty
 
@@ -228,9 +228,9 @@ include::finish/src/test/java/it/io/openliberty/guides/inventory/LibertyContaine
 
 The [hotspot file=0]`LibertyContainer` class extends the [hotspot=GenericContainer file=0]`GenericContainer` class from Testcontainers to create a custom container configuration specific to the Open Liberty application.
 
-The [hotspot=addExposedPorts1 hotspot=addExposedPorts2 file=0]`addExposedPorts(port)` method exposes specified ports from the container's perspective, allowing test clients to communicate with services running inside the container. To prevent port conflicts, Testcontainers assigns random host ports to these exposed container ports. 
+The [hotspot=addExposedPorts1 hotspot=addExposedPorts2 file=0]`addExposedPorts(port)` method exposes specified ports from the container's perspective, allowing test clients to communicate with services running inside the container. To avoid any port conflicts, Testcontainers assigns random host ports to these exposed container ports. 
 
-The [hotspot=waitingFor file=0]`waitingFor()` method directs TestContainers to wait for the specific `CWWKF0011I` log message that indicates the Liberty server has started successfully.
+The [hotspot=waitingFor file=0]`Wait.forLogMessage()` method directs `LibertyContainer` to wait for the specific `CWWKF0011I` log message that indicates the Liberty server has started successfully.
 
 Now you can set up trace logging for your tests. 
 
@@ -272,7 +272,7 @@ include::finish/src/test/java/it/io/openliberty/guides/inventory/SystemResourceI
 
 Define the [hotspot=postgresContainer file=0]`postgresContainer` test container to start up the PostgreSQL docker image, and define the [hotspot=inventoryContainer file=0]`inventoryContainer` test container to start up the `inventory` docker image. Since containers are isolated by default, make sure both containers use the same [hotspot=network1 hotspot=network2 hotspot=network3 file=0]`network` for them to communicate.
 
-The [hotspot=waitingFor file=0]`waitingFor()` method ensures the `inventoryContainer` is ready before tests run by checking the HTTP 200 status code at the specified `forHttp()` endpoint and `forPort()` port. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^].
+The [hotspot=waitingFor file=0]`Wait.forHttp().forPort()` method ensures the `inventoryContainer` is ready before tests run by checking the HTTP 200 status code at the specified endpoint and port. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^].
 
 The [hotspot=getLogger file=0]`LoggerFactory.getLogger()` and [hotspot=withLogConsumer1 hotspot=withLogConsumer2 file=0]`withLogConsumer(new Slf4jLogConsumer(Logger))` methods integrate container logs with the test logs by piping the container output to the specified logger.
 
@@ -354,7 +354,7 @@ You will see the following output:
  Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
 ----
 
-Notice that the test initiates a new Docker container each for the PostgreSQL database and the application, resulting in a longer test runtime. Despite this, cold start testing benefits from a clean instance per run and ensures consistent results. These tests also automatically hook into existing build pipelines that are set up to run the `integration-test` phase.
+Notice that the test initiates a new Docker container each for the PostgreSQL database and the `inventory` microservice, resulting in a longer test runtime. Despite this, cold start testing benefits from a clean instance per run and ensures consistent results. These tests also automatically hook into existing build pipelines that are set up to run the `integration-test` phase.
 
 // =================================================================================================
 // Great work! You're done!
