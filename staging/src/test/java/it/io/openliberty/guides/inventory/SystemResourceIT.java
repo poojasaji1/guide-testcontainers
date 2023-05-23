@@ -40,20 +40,8 @@ public class SystemResourceIT {
     private static int HTTPS_PORT = Integer.parseInt(System.getProperty("https.port"));
     private static String APP_PATH = System.getProperty("context.root") + "/api";
 
-    private static int POSTGRES_PORT = 5432;
-
     private static SystemResourceClient client;
 
-    private static boolean isServiceRunning(String host, int port) {
-        try {
-            Socket socket = new Socket(host, port);
-            socket.close();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-    
     private static String getProtocol() {
         return System.getProperty("test.protocol", "https");
     }
@@ -61,9 +49,10 @@ public class SystemResourceIT {
     private static boolean testHttps() {
         return getProtocol().equalsIgnoreCase("https");
     }
-    
+
     // tag::createRestClient[]
-    private static SystemResourceClient createRestClient(String urlPath) throws KeyStoreException {
+    private static SystemResourceClient createRestClient(String urlPath)
+            throws KeyStoreException {
         ClientBuilder builder = ResteasyClientBuilder.newBuilder();
         if (testHttps()) {
             builder.trustStore(KeyStore.getInstance("PKCS12"));
@@ -84,13 +73,8 @@ public class SystemResourceIT {
     @BeforeAll
     public static void setup() throws Exception {
         String urlPath;
-        if (isServiceRunning("localhost", POSTGRES_PORT)) {
-            urlPath = getProtocol() + "://localhost:"
-                        + (testHttps() ? HTTPS_PORT : HTTP_PORT);
-        } else {
-            throw new Exception(
-                    "Postgres database is not running");
-        }
+        urlPath = getProtocol() + "://localhost:"
+                    + (testHttps() ? HTTPS_PORT : HTTP_PORT);
         urlPath += APP_PATH;
         System.out.println("TEST: " + urlPath);
         client = createRestClient(urlPath);

@@ -1,6 +1,6 @@
 // tag::copyright[]
 /*******************************************************************************
- * Copyright (c) 2023 IBM Corporation and others.
+ * Copyright (c) 2022, 2023 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -52,9 +52,9 @@ public class SystemResourceIT {
     private static String APP_PATH = System.getProperty("context.root") + "/api";
     private static String APP_IMAGE = "inventory:1.0-SNAPSHOT";
 
-    private static String POSTGRES_HOST = "postgres";
-    private static int POSTGRES_PORT = 5432;
-    private static String POSTGRES_IMAGE = "postgres-sample:latest";
+    private static String DB_HOST = "postgres";
+    private static int DB_PORT = 5432;
+    private static String DB_IMAGE = "postgres-sample:latest";
 
     private static SystemResourceClient client;
     // tag::network1[]
@@ -63,12 +63,12 @@ public class SystemResourceIT {
 
     // tag::postgresContainer[]
     private static GenericContainer<?> postgresContainer
-        = new GenericContainer<>(POSTGRES_IMAGE)
+        = new GenericContainer<>(DB_IMAGE)
               // tag::network2[]
               .withNetwork(network)
               // end::network2[]
-              .withExposedPorts(POSTGRES_PORT)
-              .withNetworkAliases(POSTGRES_HOST)
+              .withExposedPorts(DB_PORT)
+              .withNetworkAliases(DB_HOST)
               // tag::withLogConsumer1[]
               .withLogConsumer(new Slf4jLogConsumer(logger));
               // end::withLogConsumer1[]
@@ -77,18 +77,19 @@ public class SystemResourceIT {
     // tag::inventoryContainer[]
     private static LibertyContainer inventoryContainer
         = new LibertyContainer(APP_IMAGE, testHttps(), HTTPS_PORT, HTTP_PORT)
-              .withEnv("POSTGRES_HOSTNAME", POSTGRES_HOST)
+              .withEnv("DB_HOSTNAME", DB_HOST)
               // tag::network3[]
               .withNetwork(network)
               // end::network3[]
               // tag::waitingFor[]
-              .waitingFor(Wait.forHttp(APP_PATH + "/systems").forPort(HTTP_PORT))
+              .waitingFor(Wait.forHttp("/health/ready").forPort(HTTP_PORT))
               // end::waitingFor[]
               // tag::withLogConsumer2[]
               .withLogConsumer(new Slf4jLogConsumer(logger));
               // end::withLogConsumer2[]
     // end::inventoryContainer[]
 
+    // tag::isServiceRunning[]
     private static boolean isServiceRunning(String host, int port) {
         try {
             Socket socket = new Socket(host, port);
@@ -98,6 +99,7 @@ public class SystemResourceIT {
             return false;
         }
     }
+    // end::isServiceRunning[]
     
     private static String getProtocol() {
         return System.getProperty("test.protocol", "https");
@@ -107,7 +109,8 @@ public class SystemResourceIT {
         return getProtocol().equalsIgnoreCase("https");
     }
     
-    private static SystemResourceClient createRestClient(String urlPath) throws KeyStoreException {
+    private static SystemResourceClient createRestClient(String urlPath) 
+            throws KeyStoreException {
         ClientBuilder builder = ResteasyClientBuilder.newBuilder();
         if (testHttps()) {
             builder.trustStore(KeyStore.getInstance("PKCS12"));
@@ -116,19 +119,20 @@ public class SystemResourceIT {
                 public boolean verify(String hostname, SSLSession session) {
                     return hostname.equals("localhost") || hostname.equals("docker");
                 } };
-            builder.hostnameVerifier(v );
+            builder.hostnameVerifier(v);
         }
         ResteasyClient client = (ResteasyClient) builder.build();
         ResteasyWebTarget target = client.target(UriBuilder.fromPath(urlPath));
         return target.proxy(SystemResourceClient.class);
     }
 
+    // tag::setup[]
     @BeforeAll
     public static void setup() throws Exception {
         String urlPath;
         if (isServiceRunning("localhost", HTTP_PORT)) {
             logger.info("Testing by dev mode or local runtime...");
-            if (isServiceRunning("localhost", POSTGRES_PORT)) {
+            if (isServiceRunning("localhost", DB_PORT)) {
                 logger.info("The application is ready to test.");
                 urlPath = getProtocol() + "://localhost:"
                           + (testHttps() ? HTTPS_PORT : HTTP_PORT);
@@ -138,7 +142,7 @@ public class SystemResourceIT {
             }
         } else {
             logger.info("Testing by using Testcontainers...");
-            if (isServiceRunning("localhost", POSTGRES_PORT)) {
+            if (isServiceRunning("localhost", DB_PORT)) {
                 throw new Exception(
                       "Postgres database is running locally. Stop it and retry.");                
             } else {
@@ -151,13 +155,16 @@ public class SystemResourceIT {
         System.out.println("TEST: " + urlPath);
         client = createRestClient(urlPath);
     }
+    // end::setup[]
 
+    // tag::tearDown[]
     @AfterAll
     public static void tearDown() {
         inventoryContainer.stop();
         postgresContainer.stop();
         network.close();
     }
+    // end::tearDown[]
 
     private void showSystemData(SystemData system) {
         System.out.println("TEST: SystemData > "
