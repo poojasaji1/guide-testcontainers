@@ -124,7 +124,7 @@ You will see the following output:
 // =================================================================================================
 == Implementing integration tests
 
-Although you can test your application manually, automated tests ensure consistent code quality by triggering a failure whenever a code change introduces a defect. In this section, you will implement integration tests to verify the functionality of the `inventory` microservice under the local runtime environment.
+In this section, you will implement integration tests to verify the functionality of the `inventory` microservice under the local runtime environment.
 
 Navigate to the `start` directory to begin.
 
