@@ -332,7 +332,7 @@ include::finish/src/test/java/it/io/openliberty/guides/inventory/LibertyContaine
 
 Define the [hotspot=postgresContainer file=0]`postgresContainer` test container to start up the PostgreSQL docker image, and define the [hotspot=inventoryContainer file=0]`inventoryContainer` test container to start up the `inventory` docker image. Because containers are isolated by default, make sure both containers use the same [hotspot=network1 hotspot=network2 hotspot=network3 file=0]`network` for them to communicate.
 
-The [hotspot=waitingFor file=0]`waitingFor()` method overrides the [hotspot=waitingFor file=1]`waitingFor()` method in [hotspot file=1]`LibertyContainer`, ensuring the `inventoryContainer` is ready before tests run by checking the `healthy/ready` health readiness check API. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^].
+The [hotspot=waitingFor file=0]`waitingFor()` method overrides the [hotspot=waitingFor file=1]`waitingFor()` method in [hotspot file=1]`LibertyContainer`, ensuring the `inventoryContainer` is ready before tests run by checking the [hotspot=waitingFor file=0]`/health/ready` health readiness check API. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^].
 
 The [hotspot=getLogger file=0]`LoggerFactory.getLogger()` and [hotspot=withLogConsumer1 hotspot=withLogConsumer2 file=0]`withLogConsumer(new Slf4jLogConsumer(Logger))` methods integrate container logs with the test logs by piping the container output to the specified logger.
 
