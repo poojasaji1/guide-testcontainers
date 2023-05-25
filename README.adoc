@@ -173,7 +173,7 @@ You need to wait a while to let dev mode start. After you see the following mess
 
 Dev mode holds your command-line session to listen for file changes. Open another command-line session to continue, or open the project in your editor.
 
-Point your browser to the http://localhost:9080/openapi/ui URL to try out the `inventory` application manually. This interface provides a convenient visual way to interact with the APIs and test out their functionalities. 
+Point your browser to the http://localhost:9080/openapi/ui URL to try out the `inventory` microservice manually. This interface provides a convenient visual way to interact with the APIs and test out their functionalities. 
 
 === Building test REST client
 
@@ -330,7 +330,7 @@ LibertyContainer.java
 include::finish/src/test/java/it/io/openliberty/guides/inventory/LibertyContainer.java[]
 ----
 
-Define the [hotspot=postgresContainer file=0]`postgresContainer` test container to start up the PostgreSQL docker image, and define the [hotspot=inventoryContainer file=0]`inventoryContainer` test container to start up the `inventory` docker image. Because containers are isolated by default, make sure both containers use the same [hotspot=network1 hotspot=network2 hotspot=network3 file=0]`network` for them to communicate.
+Define the [hotspot=postgresContainer file=0]`postgresContainer` test container to start up the PostgreSQL Docker image, and define the [hotspot=inventoryContainer file=0]`inventoryContainer` test container to start up the `inventory` Docker image. Because containers are isolated by default, make sure both containers use the same [hotspot=network1 hotspot=network2 hotspot=network3 file=0]`network` for them to communicate.
 
 The [hotspot=waitingFor file=0]`waitingFor()` method overrides the [hotspot=waitingFor file=1]`waitingFor()` method in [hotspot file=1]`LibertyContainer`, ensuring the `inventoryContainer` is ready before tests run by checking the [hotspot=waitingFor file=0]`/health/ready` health readiness check API. For different container readiness check customizations, refer to the https://www.testcontainers.org/features/startup_and_waits/[official Testcontainers documentation^].
 
