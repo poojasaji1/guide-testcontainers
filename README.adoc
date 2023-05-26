@@ -135,7 +135,7 @@ Run the following command to start the PostgreSQL database, which runs the `post
 docker run --name postgres-container -p 5432:5432 -d postgres-sample
 ```
 
-The Open Liberty Maven plug-in includes a `devc` goal that simplifies developing your application in a container by starting dev mode with container support. This goal builds a Docker image, mounts the required directories, binds the required ports, and then runs the application inside of a container. Dev mode also listens for any changes in the application source code or configuration and rebuilds the image and restarts the container as necessary.
+The Open Liberty Maven plug-in includes a `devc` goal that simplifies developing your application in a container by starting development mode with container support, known as dev mode. This goal builds a Docker image, mounts the required directories, binds the required ports, and then runs the application inside of a container. Dev mode also listens for any changes in the application source code or configuration and rebuilds the image and restarts the container as necessary.
 
 Retrieve the PostgreSQL container IP address by running the following command:
 
