@@ -62,7 +62,9 @@ public class SystemResourceIT {
     // end::network1[]
 
     // tag::postgresContainer[]
+    // tag::GenericContainer[]
     private static GenericContainer<?> postgresContainer
+    // end::GenericContainer[]
         = new GenericContainer<>(DB_IMAGE)
               // tag::network2[]
               .withNetwork(network)
@@ -75,7 +77,9 @@ public class SystemResourceIT {
     // end::postgresContainer[]
 
     // tag::inventoryContainer[]
+    // tag::LibertyContainer[]
     private static LibertyContainer inventoryContainer
+    // end::LibertyContainer[]
         = new LibertyContainer(invImage, testHttps(), httpsPort, httpPort)
               .withEnv("DB_HOSTNAME", DB_HOST)
               // tag::network3[]
@@ -146,8 +150,12 @@ public class SystemResourceIT {
                 throw new Exception(
                       "Postgres database is running locally. Stop it and retry.");
             } else {
+                // tag::postgresContainerStart[]
                 postgresContainer.start();
+                // end::postgresContainerStart[]
+                // tag::inventoryContainerStart[]
                 inventoryContainer.start();
+                // end::inventoryContainerStart[]
                 urlPath = inventoryContainer.getBaseURL(getProtocol());
             }
         }
