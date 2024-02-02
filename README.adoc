@@ -13,8 +13,8 @@
 :page-guide-category: microprofile
 :page-essential: false
 :page-description: Learn how to test your microservices with multiple containers by using Testcontainers and JUnit.
-:page-seo-title: Testing Java microservices using Testcontainers and JUnit with multiple containers and Open Liberty Docker container
-:page-seo-description: A getting started tutorial on how to develop true-to-production integration tests for Java microservices in production-like settings by using Testcontainers and JUnit with multiple containers and Open Liberty Docker container.
+:page-seo-title: Testing Java microservices using the Testcontainers and JUnit frameworks with Open Liberty and Docker containers
+:page-seo-description: Learn how to develop and execute true-to-production integration tests in production-like environments for Java applications written with Jakarta EE and MicroProfile APIs by using Testcontainers, JUnit, Open Liberty, and Docker containers.
 :guide-author: Open Liberty
 :page-tags: ['microprofile', 'jakarta-ee']
 :page-related-guides: ['reactive-service-testing', 'arquillian-managed']
@@ -34,11 +34,11 @@ Learn how to test your microservices with multiple containers by using Testconta
 
 You'll learn how to write true-to-production integration tests for Java microservices by using https://www.testcontainers.org/[Testcontainers^] and JUnit. You'll learn to set up and configure multiple containers, including the Open Liberty Docker container, to simulate a production-like environment for your tests.
 
-Sometimes tests might pass in development and testing environments, but fail in production because of the differences in how the application operates across these environments. Fortunately, these differences can be minimized by testing your application with the same Docker containers you will use in production. This approach helps to ensure parity across the development, testing, and production environments, enhancing quality and test reliability.
+Sometimes tests might pass in development and testing environments, but fail in production because of the differences in how the application operates across these environments. Fortunately, you can minimize these differences by testing your application with the same Docker containers you use in production. This approach helps to ensure parity across the development, testing, and production environments, enhancing quality and test reliability.
 
 === What is Testcontainers?
 
-Testcontainers is an open-source library that provides containers as a resource at test time, creating consistent and portable testing environments. This is especially useful for applications that have external resource dependencies such as databases, message queues, or web services. By encapsulating these dependencies in containers, Testcontainers simplifies the configuration process and ensures a uniform testing setup that closely mirrors production environments.
+Testcontainers is an open source library that provides containers as a resource at test time, creating consistent and portable testing environments. This is especially useful for applications that have external resource dependencies such as databases, message queues, or web services. By encapsulating these dependencies in containers, Testcontainers simplifies the configuration process and ensures a uniform testing setup that closely mirrors production environments.
 
 The microservice that you'll be working with is called `inventory`. The `inventory` microservice persists data into a PostgreSQL database and supports create, retrieve, update, and delete (CRUD) operations on the database records. You'll write integration tests for the application by using Testcontainers to run it in Docker containers.
 
@@ -66,7 +66,7 @@ include::{common-includes}/gitclone.adoc[]
 
 The `finish` directory in the root of this guide contains the finished application. Give it a try before you proceed.
 
-To try out the test, first go to the `finish` directory and run the `mvn package` command so that the `.war` file is in the `target` directory, and the `.jar` PostgreSQL JDBC driver file is in the `target/liberty/wlp/usr/shared/resources` directory:
+To try out the test, first go to the `finish` directory and run the `mvn package` command to build and package the application, which places the `.war` file in the `target` directory and the `.jar` PostgreSQL JDBC driver file in the `target/liberty/wlp/usr/shared/resources` directory:
 
 [role='command']
 ```
@@ -119,7 +119,7 @@ You see the following output:
 // =================================================================================================
 == Writing integration tests using Testcontainers
 
-Use Testcontainers to write integration tests that run in any environment with minimal setup.
+Use Testcontainers to write integration tests that run in any environment with minimal setup using containers.
 
 Navigate to the `postgres` directory.
 
@@ -153,7 +153,7 @@ The command returns the PostgreSQL container IP address:
 
 Now, navigate to the `start` directory to begin.
 
-The Open Liberty Maven plug-in includes a `devc` goal that simplifies developing your application in a container by starting https://openliberty.io/docs/latest/development-mode.html#_container_support_for_dev_mode[dev mode^] with container support. This goal builds a Docker image, mounts the required directories, binds the required ports, and then runs the application inside of a container. Dev mode also listens for any changes in the application source code or configuration and rebuilds the image and restarts the container as necessary.
+The Liberty Maven plug-in includes a `devc` goal that simplifies developing your application in a container by starting https://openliberty.io/docs/latest/development-mode.html#_container_support_for_dev_mode[dev mode^] with container support. This goal builds a Docker image, mounts the required directories, binds the required ports, and then runs the application inside of a container. Dev mode also listens for any changes in the application source code or configuration and rebuilds the image and restarts the container as necessary.
 
 Build and run the container by running the `devc` goal with the PostgreSQL container IP address. If your PostgreSQL container IP address is not `172.17.0.2`, replace the command with the right IP address.
 
@@ -179,11 +179,11 @@ Dev mode holds your command-line session to listen for file changes. Open anothe
 
 Point your browser to the http://localhost:9080/openapi/ui URL to try out the `inventory` microservice manually. This interface provides a convenient visual way to interact with the APIs and test out their functionalities. 
 
-=== Building a test REST client
+=== Building a REST test client
 
-The test REST client is responsible for sending HTTP requests to an application and handling the responses. It enables accurate verification of the application's behavior by ensuring that it responds correctly to various scenarios and conditions. Using a REST client for testing ensures reliable interaction with the `inventory` microservice across various deployment environments: local, Docker container, or Testcontainers.
+The REST test client is responsible for sending HTTP requests to an application and handling the responses. It enables accurate verification of the application's behavior by ensuring that it responds correctly to various scenarios and conditions. Using a REST client for testing ensures reliable interaction with the `inventory` microservice across various deployment environments: local processes, Docker containers, or containers through Testcontainers.
 
-Begin by creating a test REST client interface for the `inventory` microservice.
+Begin by creating a REST test client interface for the `inventory` microservice.
 
 [role="code_command hotspot file=0" ,subs="quotes"]
 ----
@@ -291,7 +291,7 @@ The [hotspot=testUpdateSystem file=0]`testUpdateSystem()` verifies the [hotspot=
 
 The [hotspot=testRemoveSystem file=0]`testRemoveSystem()` verifies the [hotspot=removeSystem file=0]`removeSystem` endpoint.
 
-After tests, the [hotspot=tearDown file=0]`tearDown()` method stops the containers and closes the network.
+After the tests are executed, the [hotspot=tearDown file=0]`tearDown()` method stops the containers and closes the network.
 
 
 === Setting up logs
@@ -337,7 +337,7 @@ The Maven `pom.xml` file contains a configuration for the [hotspot=maven-depende
 
 Also, add and configure the [hotspot=failsafe file=0]`maven-failsafe-plugin` plugin, so that the integration test can be run by the `mvn verify` command.
 
-As you started Open Liberty in dev mode, all the changes were automatically picked up. You can run the tests by pressing the `enter/return` key from the command-line session where you started dev mode. You see the following output:
+When you started Open Liberty in dev mode, all the changes were automatically picked up. You can run the tests by pressing the `enter/return` key from the command-line session where you started dev mode. You see the following output:
 
 [role="no_copy"]
 ----
