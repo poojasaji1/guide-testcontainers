@@ -2,7 +2,7 @@ name: Test application
 
 on:
   pull_request:
-    branches: [ draft ]
+    branches: [ prod, staging ]
 
 jobs:
   check-files:
@@ -31,7 +31,7 @@ jobs:
           DOCKERFILE_HADOLINT_DISABLE_ERRORS: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LINTER_RULES_PATH: ./tools/pr-checker/linters/
-          DEFAULT_BRANCH: draft
+          DEFAULT_BRANCH: prod
       - name: Summary
         if: always()
         run: |
