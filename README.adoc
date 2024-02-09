@@ -59,6 +59,13 @@ Make sure to start your Docker daemon before you proceed.
 [role='command']
 include::{common-includes}/gitclone.adoc[]
 
+ifdef::cloud-hosted[]
+In this IBM Cloud environment, you need to change the user home to ***/home/project*** by running the following command:
+```bash
+sudo usermod -d /home/project theia
+```
+endif::[]
+
 // =================================================================================================
 // Try what you'll build
 // =================================================================================================
@@ -76,6 +83,7 @@ mvn package
 
 Now, run the `mvn verify` command, which compiles the Java files, starts the containers, runs the tests, and then stops the containers.
 
+ifndef::cloud-hosted[]
 [.tab_link.windows_link]
 `*WINDOWS*`
 [.tab_link.mac_link]
@@ -97,6 +105,14 @@ export TESTCONTAINERS_RYUK_DISABLED=true
 mvn verify
 ```
 --
+endif::[]
+
+ifdef::cloud-hosted[]
+```bash
+export TESTCONTAINERS_RYUK_DISABLED=true
+mvn verify
+```
+endif::[]
 
 You see the following output:
 
@@ -122,6 +138,12 @@ You see the following output:
 Use Testcontainers to write integration tests that run in any environment with minimal setup using containers.
 
 Navigate to the `postgres` directory.
+
+ifdef::cloud-hosted[]
+```bash
+cd /home/project/guide-testcontainers/postgres
+```
+endif::[]
 
 This guide uses Docker to run an instance of the PostgreSQL database for a fast installation and setup. A Dockerfile file is provided for you. Run the following command to use the Dockerfile to build the image:
 
@@ -153,7 +175,22 @@ The command returns the PostgreSQL container IP address:
 
 Now, navigate to the `start` directory to begin.
 
+ifdef::cloud-hosted[]
+```bash
+cd /home/project/guide-testcontainers/start
+```
+endif::[]
+
 The Liberty Maven plug-in includes a `devc` goal that simplifies developing your application in a container by starting https://openliberty.io/docs/latest/development-mode.html#_container_support_for_dev_mode[dev mode^] with container support. This goal builds a Docker image, mounts the required directories, binds the required ports, and then runs the application inside of a container. Dev mode also listens for any changes in the application source code or configuration and rebuilds the image and restarts the container as necessary.
+
+ifdef::cloud-hosted[]
+In this IBM Cloud environment, you need to pre-create the ***logs*** directory by running the following commands:
+
+```bash
+mkdir -p /home/project/guide-testcontainers/start/target/liberty/wlp/usr/servers/defaultServer/logs
+chmod 777 /home/project/guide-testcontainers/start/target/liberty/wlp/usr/servers/defaultServer/logs
+```
+endif::[]
 
 Build and run the container by running the `devc` goal with the PostgreSQL container IP address. If your PostgreSQL container IP address is not `172.17.0.2`, replace the command with the right IP address.
 
@@ -175,9 +212,23 @@ Wait a moment for dev mode to start. After you see the following message, your L
 *    ...
 ----
 
+ifndef::cloud-hosted[]
 Dev mode holds your command-line session to listen for file changes. Open another command-line session to continue, or open the project in your editor.
 
 Point your browser to the http://localhost:9080/openapi/ui URL to try out the `inventory` microservice manually. This interface provides a convenient visual way to interact with the APIs and test out their functionalities. 
+endif::[]
+
+ifdef::cloud-hosted[]
+Dev mode holds your command-line session to listen for file changes.
+
+Click the following button to try out the ***inventory*** microservice manually by visiting the ***/openapi/ui*** endpoint. This interface provides a convenient visual way to interact with the APIs and test out their functionalities:
+
+::startApplication{port="9080" display="external" name="Visit OpenAPI UI" route="/openapi/ui"}
+
+Open another command-line session to continue.
+endif::[]
+
+
 
 === Building a REST test client
 
