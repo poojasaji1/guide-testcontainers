@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: tools/
-          repository: openliberty/guides-common
+          repository: openliberty/guides-commongit clone git@github.com:<your GH id>/guide-<project-id>.git
       - id: Checker
         shell: bash
         run: bash ./tools/pr-checker/checker.sh ${{ github.repository }} ${{ github.event.pull_request.number }} | tee checker.log
@@ -60,7 +60,7 @@ jobs:
         run: |
           docker images
           logsPath=$(find . -name "console.log");
-          cat $logsPath | grep Launching
+          cat "$logsPath" | grep Launching
       - name: Archive server logs if failed
         if: failure()
         uses: actions/upload-artifact@v2
